@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POP32i Simulator: Real Arduino Code</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=Source+Code+Pro:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f3f4f6;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .code-font {
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; 
+        }
+
+        .canvas-bg {
+            background-color: #e5e7eb;
+            cursor: grab;
+        }
+        .canvas-bg:active {
+            cursor: grabbing;
+        }
+        
+        optgroup { font-weight: bold; color: #4338ca; }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white p-3 shadow-md flex justify-between items-center shrink-0 z-20">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-700 font-bold text-xl">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold">POP32i Simulator</h1>
+                <p class="text-xs text-indigo-200">Arduino C++ Edition</p>
+            </div>
+        </div>
+        <div class="flex gap-2 items-center">
+            <div class="flex flex-col items-end mr-2">
+                <label class="text-[10px] uppercase text-indigo-200 font-bold">เลือกภารกิจ</label>
+                <select id="missionSelect" class="bg-indigo-800 text-white border border-indigo-500 rounded px-3 py-1 text-sm focus:outline-none w-64">
+                    <option value="free">🛠️ โหมดอิสระ (Free Run)</option>
+                    <optgroup label="Basic Movement (การเคลื่อนที่)">
+                        <option value="lv1">ด่าน 1: ไปคณะวิศวกรรมศาสตร์</option>
+                        <option value="lv2">ด่าน 2: ไปคณะวิทยาศาสตร์</option>
+                        <option value="lv3">ด่าน 3: ไปคณะแพทยศาสตร์</option>
+                        <option value="lv4">ด่าน 4: ไปคณะเกษตรศาสตร์</option>
+                    </optgroup>
+                    <optgroup label="Gripper (การคีบจับ)">
+                        <option value="lv5">ด่าน 5: ส่งของให้วิศวะ</option>
+                        <option value="lv6">ด่าน 6: ย้ายของข้ามตึก (วิทย์->แพทย์)</option>
+                    </optgroup>
+                    <optgroup label="Advanced (ขั้นสูง)">
+                        <option value="lv7">ด่าน 7: เดินวนรอบเกาะกลาง (Loop)</option>
+                        <option value="lv8">ด่าน 8: เช็คพอยต์ (วิทย์ -> เกษตร)</option>
+                        <option value="lv9">ด่าน 9: ถอยจอดเข้าซอง (Parking)</option>
+                        <option value="lv10">ด่าน 10: ทัวร์รอบมหาวิทยาลัย (Grand Tour)</option>
+                    </optgroup>
+                </select>
+            </div>
+            <button onclick="showHelp()" class="bg-indigo-500 hover:bg-indigo-400 px-3 py-2 rounded text-sm transition h-full">
+                <i class="fas fa-book-open"></i> คู่มือคำสั่ง
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Left: Code Editor -->
+        <div class="w-1/3 bg-gray-900 flex flex-col border-r border-gray-700 relative z-10">
+            <div class="bg-gray-800 text-gray-300 px-4 py-2 text-xs font-mono flex justify-between items-center border-b border-gray-700">
+                <span>main.cpp</span>
+                <span id="statusIndicator" class="text-yellow-500"><i class="fas fa-circle text-[8px] mr-1"></i>Ready</span>
+            </div>
+            
+            <div class="relative flex-1 overflow-hidden">
+                <textarea id="codeEditor" class="w-full h-full bg-gray-900 text-green-400 code-font p-4 outline-none resize-none text-sm leading-relaxed" spellcheck="false" placeholder="// เขียนโค้ดที่นี่..."></textarea>
+            </div>
+
+            <!-- Editor Controls -->
+            <div class="p-4 bg-gray-800 border-t border-gray-700 flex gap-2">
+                <button onclick="runSimulation()" id="runBtn" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded font-semibold transition flex items-center justify-center gap-2">
+                    <i class="fas fa-play"></i> Upload & Run
+                </button>
+                <button onclick="resetSimulation()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 rounded font-semibold transition">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Simulation Area -->
+        <div class="flex-1 flex flex-col relative bg-gray-100 overflow-hidden">
+            
+            <!-- HUD / Toolbar -->
+            <div class="absolute top-4 left-4 z-10 flex gap-2 flex-wrap pointer-events-none">
+                <div class="bg-white/90 backdrop-blur shadow-lg rounded-lg p-3 w-48 border border-gray-200 pointer-events-auto">
+                    <div class="text-xs text-gray-500 uppercase font-bold mb-1">OLED Display (128x64)</div>
+                    <div id="oledScreen" class="bg-black text-cyan-400 font-mono text-xs p-2 h-16 rounded overflow-hidden leading-tight whitespace-pre-wrap">
+                        POP32i Ready...
+                    </div>
+                </div>
+                
+                <div class="bg-white/90 backdrop-blur shadow-lg rounded-lg p-3 border border-gray-200 flex flex-col justify-center min-w-[100px] pointer-events-auto">
+                    <div class="text-xs text-gray-500 uppercase font-bold mb-1">Status</div>
+                    <div class="text-xs space-y-1">
+                        <div><span class="font-bold text-gray-700">M1(L):</span> <span id="motorL" class="text-blue-600">0</span> <span class="font-bold text-gray-700 ml-1">M2(R):</span> <span id="motorR" class="text-blue-600">0</span></div>
+                        <div><span class="font-bold text-gray-700">Servo 1:</span> <span id="servoVal" class="text-purple-600">90°</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zoom Controls -->
+            <div class="absolute bottom-6 right-6 z-10 flex flex-col gap-2">
+                <button onclick="zoomIn()" class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-indigo-600 hover:bg-gray-50 transition border border-gray-200 font-bold text-xl">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button onclick="resetCamera()" class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-indigo-600 hover:bg-gray-50 transition border border-gray-200 text-sm" title="Fit Screen">
+                    <i class="fas fa-compress"></i>
+                </button>
+                <button onclick="zoomOut()" class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-indigo-600 hover:bg-gray-50 transition border border-gray-200 font-bold text-xl">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+
+            <!-- Canvas -->
+            <canvas id="simCanvas" class="w-full h-full canvas-bg block"></canvas>
+
+            <!-- Mission Objective Popup -->
+            <div id="missionBox" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur shadow-xl rounded-full px-6 py-3 border border-indigo-200 hidden items-center gap-3 animate-bounce z-20 pointer-events-none">
+                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 font-bold uppercase">Current Mission</div>
+                    <span id="missionText" class="text-sm font-semibold text-gray-800">Mission text here</span>
+                </div>
+            </div>
+
+            <!-- Success Overlay -->
+            <div id="successOverlay" class="absolute inset-0 bg-black/80 hidden flex-col items-center justify-center text-white z-50 backdrop-blur-sm">
+                <div class="text-6xl text-yellow-400 mb-4 animate-pulse"><i class="fas fa-star"></i></div>
+                <h2 class="text-4xl font-bold mb-2">Mission Complete!</h2>
+                <p class="text-gray-300 mb-8 text-lg">ภารกิจสำเร็จ! Code ของคุณถูกต้อง</p>
+                <div class="flex gap-4">
+                    <button onclick="closeSuccess()" class="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-full font-bold transition">
+                        เล่นซ้ำ
+                    </button>
+                    <button onclick="nextLevel()" class="bg-indigo-600 hover:bg-indigo-500 px-8 py-2 rounded-full font-bold transition flex items-center gap-2 shadow-lg hover:shadow-indigo-500/50">
+                        ด่านต่อไป <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-indigo-50">
+                <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-code text-indigo-600 mr-2"></i>ชุดคำสั่ง POP32i (Arduino C++)</h3>
+                <button onclick="closeHelp()" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto text-sm bg-gray-50">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <h4 class="font-bold text-indigo-700 mb-3 flex items-center gap-2"><i class="fas fa-walking"></i> การเคลื่อนที่ (Movement)</h4>
+                        <ul class="space-y-2">
+                            <li class="flex justify-between items-center"><code class="bg-gray-100 px-2 py-1 rounded text-red-600 font-bold border border-gray-200">FD(speed)</code> <span class="text-gray-600">เดินหน้า (0-100)</span></li>
+                            <li class="flex justify-between items-center"><code class="bg-gray-100 px-2 py-1 rounded text-red-600 font-bold border border-gray-200">BK(speed)</code> <span class="text-gray-600">ถอยหลัง</span></li>
+                            <li class="flex justify-between items-center"><code class="bg-gray-100 px-2 py-1 rounded text-red-600 font-bold border border-gray-200">SL(speed)</code> <span class="text-gray-600">หมุนซ้าย</span></li>
+                            <li class="flex justify-between items-center"><code class="bg-gray-100 px-2 py-1 rounded text-red-600 font-bold border border-gray-200">SR(speed)</code> <span class="text-gray-600">หมุนขวา</span></li>
+                            <li class="flex justify-between items-center"><code class="bg-gray-100 px-2 py-1 rounded text-red-600 font-bold border border-gray-200">AO()</code> <span class="text-gray-600">หยุดมอเตอร์ (All Off)</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <h4 class="font-bold text-indigo-700 mb-3 flex items-center gap-2"><i class="fas fa-cogs"></i> คำสั่งอื่นๆ (Utilities)</h4>
+                        <ul class="space-y-3">
+                            <li class="flex flex-col border-b pb-2">
+                                <div class="flex justify-between items-center mb-1">
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-blue-600 font-bold border border-gray-200">delay(ms)</code>
+                                </div>
+                                <span class="text-gray-500 text-xs ml-1">หน่วงเวลา (เช่น 1000 = 1 วินาที)</span>
+                            </li>
+                            <li class="flex flex-col border-b pb-2">
+                                <div class="flex justify-between items-center mb-1">
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-purple-600 font-bold border border-gray-200">servo(1, angle)</code>
+                                </div>
+                                <span class="text-gray-500 text-xs ml-1">คุมเซอร์โวช่อง 1 (0-180 องศา)</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <div class="flex justify-between items-center mb-1">
+                                    <code class="bg-gray-100 px-2 py-1 rounded text-green-600 font-bold border border-gray-200">motor(ch, speed)</code>
+                                </div>
+                                <span class="text-gray-500 text-xs ml-1">คุมมอเตอร์แยก (ch: 1=ซ้าย, 2=ขวา)</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200 text-xs text-yellow-800">
+                    <strong>Note:</strong> เขียนโค้ดใน <code>void setup()</code> หรือ <code>void loop()</code> ได้ตามปกติ ระบบจะจำลองการทำงานเหมือนบอร์ดจริง
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 flex justify-end bg-white">
+                <button onclick="closeHelp()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 font-bold shadow-md transition transform hover:scale-105">เข้าใจแล้ว!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio -->
+    <audio id="beepSound" src="data:audio/wav;base64,UklGRl9vT1dAVXphcnQAAAAAAAAAAAAAAABwY20gAAAAAGAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="></audio>
+
+    <script>
+        // --- Globals ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const editor = document.getElementById('codeEditor');
+        const oled = document.getElementById('oledScreen');
+        const motorLDisp = document.getElementById('motorL');
+        const motorRDisp = document.getElementById('motorR');
+        const servoDisp = document.getElementById('servoVal');
+        const runBtn = document.getElementById('runBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+
+        // State
+        let isRunning = false;
+        let animationFrame;
+        let commandQueue = [];
+        let currentCommandIndex = 0;
+        let commandStartTime = 0;
+        let lastTimestamp = 0;
+
+        // --- Camera & Interaction State ---
+        const WORLD_W = 2400;
+        const WORLD_H = 1800;
+        
+        let camera = { x: 0, y: 0, scale: 0.5 };
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
+
+        // Robot
+        const ROBOT_SIZE = 40;
+        const ROBOT_COLOR = '#4F46E5'; 
+        let robot = {
+            x: 0, y: 0, angle: 0,
+            speedL: 0, speedR: 0,
+            servoAngle: 90, holdingObject: null
+        };
+
+        // Environment
+        let currentLevel = 'lv1';
+        let cans = [];
+        let targetZones = []; 
+        let checkpoints = []; 
+        let currentCheckpointIndex = 0;
+
+        // --- Initialization ---
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            draw();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Camera Logic ---
+        function resetCamera() {
+            camera.x = WORLD_W / 2;
+            camera.y = WORLD_H / 2;
+            const scaleX = canvas.width / (WORLD_W + 100);
+            const scaleY = canvas.height / (WORLD_H + 100);
+            camera.scale = Math.min(scaleX, scaleY, 0.5);
+            draw();
+        }
+
+        function zoomIn() { camera.scale *= 1.2; draw(); }
+        function zoomOut() { camera.scale /= 1.2; draw(); }
+
+        canvas.addEventListener('mousedown', e => {
+            isDragging = true;
+            lastMouse = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        canvas.addEventListener('mousemove', e => {
+            if (isDragging) {
+                const dx = e.clientX - lastMouse.x;
+                const dy = e.clientY - lastMouse.y;
+                camera.x -= dx / camera.scale;
+                camera.y -= dy / camera.scale;
+                lastMouse = { x: e.clientX, y: e.clientY };
+                draw();
+            }
+        });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const zoomSpeed = 0.1;
+            const newScale = camera.scale * (1 - Math.sign(e.deltaY) * zoomSpeed);
+            if (newScale > 0.1 && newScale < 5.0) {
+                camera.scale = newScale;
+                draw();
+            }
+        }, { passive: false });
+
+        // --- Core Logic ---
+        function resetScenario() {
+            robot.speedL = 0; robot.speedR = 0;
+            robot.servoAngle = 90; robot.holdingObject = null;
+            
+            const startX = WORLD_W * 0.5;
+            const startY = WORLD_H * 0.95;
+            robot.x = startX;
+            robot.y = startY;
+            robot.angle = -Math.PI / 2; 
+
+            cans = [];
+            targetZones = [];
+            checkpoints = [];
+            currentCheckpointIndex = 0;
+
+            const w = WORLD_W;
+            const h = WORLD_H;
+
+            const locEng = { x: w*0.15, y: h*0.2, w: w*0.2, h: h*0.2, label: "Eng" };
+            const locSci = { x: w*0.48, y: h*0.15, w: w*0.2, h: h*0.2, label: "Sci" };
+            const locMed = { x: w*0.45, y: h*0.75, w: w*0.2, h: h*0.15, label: "Med" };
+            const locAgri = { x: w*0.82, y: h*0.2, w: w*0.2, h: h*0.2, label: "Agri" };
+            const locParking = { x: w*0.85, y: h*0.85, w: 200, h: 250, label: "Park" };
+
+            switch(currentLevel) {
+                case 'lv1': targetZones.push({ ...locEng, type: 'stop', active: true }); break;
+                case 'lv2': targetZones.push({ ...locSci, type: 'stop', active: true }); break;
+                case 'lv3': targetZones.push({ ...locMed, type: 'stop', active: true }); break;
+                case 'lv4': targetZones.push({ ...locAgri, type: 'stop', active: true }); break;
+                case 'lv5': 
+                    cans.push({id: 1, x: startX, y: startY - 150, color: 'orange', radius: 15, grabbed: false});
+                    targetZones.push({ ...locEng, type: 'drop', active: true });
+                    break;
+                case 'lv6': 
+                    robot.x = locSci.x; robot.y = locSci.y + 150; 
+                    cans.push({id: 1, x: locSci.x, y: locSci.y, color: '#3b82f6', radius: 15, grabbed: false});
+                    targetZones.push({ ...locMed, type: 'drop', active: true });
+                    break;
+                case 'lv7': 
+                    checkpoints = [
+                        {x: w*0.2, y: h*0.45, r: 100}, {x: w*0.5, y: h*0.1, r: 100},
+                        {x: w*0.8, y: h*0.45, r: 100}, {x: w*0.5, y: h*0.9, r: 100}
+                    ];
+                    break;
+                case 'lv8': 
+                    robot.x = locSci.x; robot.y = locSci.y + 100;
+                    targetZones.push({ ...locAgri, type: 'stop', active: true });
+                    break;
+                case 'lv9': 
+                     robot.x = locAgri.x; robot.y = locAgri.y + 200; robot.angle = Math.PI/2;
+                     targetZones.push({ ...locParking, type: 'stop', active: true, strict: true });
+                     break;
+                case 'lv10':
+                     checkpoints = [{x:locEng.x,y:locEng.y,r:150}, {x:locSci.x,y:locSci.y,r:150}, {x:locAgri.x,y:locAgri.y,r:150}, {x:locMed.x,y:locMed.y,r:150}];
+                     break;
+            }
+
+            oled.innerText = "Ready...";
+            updateDashboard();
+            resetCamera();
+            draw();
+        }
+
+        // --- Drawing ---
+        function draw() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            
+            ctx.translate(cx, cy);
+            ctx.scale(camera.scale, camera.scale);
+            ctx.translate(-camera.x, -camera.y);
+
+            drawUbonMap();
+
+            if (checkpoints.length > 0) {
+                checkpoints.forEach((cp, idx) => {
+                    if (idx >= currentCheckpointIndex) {
+                        ctx.beginPath();
+                        ctx.arc(cp.x, cp.y, 20, 0, Math.PI*2);
+                        ctx.fillStyle = idx === currentCheckpointIndex ? '#ef4444' : '#d1d5db';
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(idx+1, cp.x, cp.y);
+                    }
+                });
+            }
+
+            targetZones.forEach(z => {
+                if (!z.active) return;
+                const pulse = Math.sin(Date.now() / 200) * 0.2 + 0.4;
+                ctx.fillStyle = z.type === 'drop' ? `rgba(16, 185, 129, ${pulse})` : `rgba(239, 68, 68, ${pulse})`;
+                ctx.fillRect(z.x - z.w/2, z.y - z.h/2, z.w, z.h);
+                ctx.strokeStyle = z.type === 'drop' ? '#10B981' : '#EF4444';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(z.x - z.w/2, z.y - z.h/2, z.w, z.h);
+                
+                ctx.fillStyle = '#000';
+                ctx.font = "bold 30px Prompt";
+                ctx.textAlign = "center";
+                ctx.fillText(z.type === 'drop' ? "จุดวางของ" : "เป้าหมาย", z.x, z.y);
+            });
+
+            cans.forEach(can => {
+                if (!can.grabbed) drawCan(can.x, can.y, can.color, can.radius);
+            });
+
+            drawRobot();
+        }
+
+        function drawUbonMap() {
+            const w = WORLD_W;
+            const h = WORLD_H;
+            
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0,0, w, h);
+            
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(0,0, w, h);
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 80; 
+            ctx.strokeStyle = '#334155'; 
+
+            ctx.beginPath();
+            ctx.moveTo(w*0.25, h*0.2); 
+            ctx.lineTo(w*0.25, h*0.8);
+            ctx.lineTo(w*0.75, h*0.8);
+            ctx.lineTo(w*0.75, h*0.2);
+            ctx.lineTo(w*0.25, h*0.2);
+            
+            ctx.moveTo(w*0.25, h*0.5); ctx.lineTo(w*0.75, h*0.5);
+            ctx.moveTo(w*0.5, h*0.2); ctx.lineTo(w*0.5, h*0.5);
+            ctx.moveTo(w*0.5, h*0.8); ctx.lineTo(w*0.5, h*0.95); 
+
+            ctx.stroke();
+            
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#ffffff';
+            ctx.setLineDash([20, 30]);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+
+            drawBuilding(w*0.1, h*0.1, w*0.2, h*0.3, '#fca5a5', 'วิศวกรรมศาสตร์');
+            drawBuilding(w*0.4, h*0.05, w*0.2, h*0.25, '#fde047', 'วิทยาศาสตร์');
+            drawBuilding(w*0.7, h*0.1, w*0.2, h*0.3, '#86efac', 'เกษตรศาสตร์');
+            drawBuilding(w*0.35, h*0.6, w*0.3, h*0.15, '#93c5fd', 'แพทยศาสตร์');
+
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+            ctx.fillRect(w*0.45, h*0.9, w*0.1, h*0.1);
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(w*0.45, h*0.9, w*0.1, h*0.1);
+            ctx.fillStyle = '#1e3a8a';
+            ctx.font = "bold 32px Prompt";
+            ctx.textAlign = "center";
+            ctx.fillText("START", w*0.5, h*0.95);
+        }
+
+        function drawBuilding(x, y, w, h, color, label) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+            
+            ctx.fillStyle = '#374151';
+            ctx.font = 'bold 24px Prompt';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x + w/2, y + h/2);
+        }
+
+        function drawCan(x, y, color, r) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.beginPath();
+            ctx.arc(x - r/3, y - r/3, r/4, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        function drawRobot() {
+            ctx.save();
+            ctx.translate(robot.x, robot.y);
+            ctx.rotate(robot.angle);
+
+            const visualAngle = (robot.servoAngle / 90) * (Math.PI / 4); 
+            
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(15, -10);
+            ctx.lineTo(15 + 20 * Math.cos(visualAngle), -10 - 20 * Math.sin(visualAngle));
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(15, 10);
+            ctx.lineTo(15 + 20 * Math.cos(visualAngle), 10 + 20 * Math.sin(visualAngle));
+            ctx.stroke();
+            
+            if (robot.holdingObject) {
+                drawCan(25, 0, robot.holdingObject.color, robot.holdingObject.radius);
+            }
+
+            ctx.fillStyle = ROBOT_COLOR;
+            ctx.beginPath();
+            ctx.roundRect(-ROBOT_SIZE/2, -ROBOT_SIZE/2, ROBOT_SIZE, ROBOT_SIZE, 8);
+            ctx.fill();
+
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(-10, -ROBOT_SIZE/2 - 5, 20, 5); 
+            ctx.fillRect(-10, ROBOT_SIZE/2, 20, 5); 
+
+            ctx.fillStyle = '#FCD34D';
+            ctx.beginPath();
+            ctx.moveTo(10, 0);
+            ctx.lineTo(-5, -6);
+            ctx.lineTo(-5, 6);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // --- Physics ---
+        function updatePhysics(dt) {
+            const speedMultiplier = 3.5; 
+            let vL = robot.speedL * speedMultiplier;
+            let vR = robot.speedR * speedMultiplier;
+            let v = (vL + vR) / 2;
+            let rotationSpeed = (vR - vL) / ROBOT_SIZE * 0.8; 
+
+            robot.x += Math.cos(robot.angle) * v * dt;
+            robot.y += Math.sin(robot.angle) * v * dt;
+            robot.angle += rotationSpeed * dt;
+
+            if (robot.x < 0) robot.x = 0;
+            if (robot.x > WORLD_W) robot.x = WORLD_W;
+            if (robot.y < 0) robot.y = 0;
+            if (robot.y > WORLD_H) robot.y = WORLD_H;
+
+            checkMission();
+        }
+
+        function attemptGrab() {
+            const reach = 50;
+            const grabX = robot.x + Math.cos(robot.angle) * 30;
+            const grabY = robot.y + Math.sin(robot.angle) * 30;
+
+            let grabbed = null;
+            cans.forEach(can => {
+                if (can.grabbed) return;
+                let d = Math.hypot(can.x - grabX, can.y - grabY);
+                if (d < reach) grabbed = can;
+            });
+
+            if (grabbed) {
+                grabbed.grabbed = true;
+                robot.holdingObject = grabbed;
+                playTone(1000, 100);
+            }
+        }
+
+        function attemptDrop() {
+            if (robot.holdingObject) {
+                robot.holdingObject.grabbed = false;
+                robot.holdingObject.x = robot.x + Math.cos(robot.angle) * 40;
+                robot.holdingObject.y = robot.y + Math.sin(robot.angle) * 40;
+                robot.holdingObject = null;
+            }
+        }
+
+        // --- Mission Check ---
+        function checkMission() {
+            if (!isRunning) return;
+
+            if (checkpoints.length > 0 && currentCheckpointIndex < checkpoints.length) {
+                let cp = checkpoints[currentCheckpointIndex];
+                let dist = Math.hypot(robot.x - cp.x, robot.y - cp.y);
+                if (dist < cp.r) {
+                    currentCheckpointIndex++;
+                    playTone(600, 100);
+                    if (currentCheckpointIndex >= checkpoints.length) showSuccess();
+                }
+                return;
+            }
+
+            targetZones.forEach(z => {
+                if (!z.active) return;
+                let inZone = (robot.x > z.x - z.w/2 && robot.x < z.x + z.w/2 &&
+                              robot.y > z.y - z.h/2 && robot.y < z.y + z.h/2);
+
+                if (inZone) {
+                    if (z.type === 'stop') {
+                        if (Math.abs(robot.speedL) < 5 && Math.abs(robot.speedR) < 5) showSuccess();
+                    }
+                    else if (z.type === 'drop') {
+                        let itemInZone = false;
+                        cans.forEach(c => {
+                            if (!c.grabbed && 
+                                c.x > z.x - z.w/2 && c.x < z.x + z.w/2 &&
+                                c.y > z.y - z.h/2 && c.y < z.y + z.h/2) {
+                                itemInZone = true;
+                            }
+                        });
+                        if (itemInZone) showSuccess();
+                    }
+                }
+            });
+        }
+
+        function showSuccess() {
+            isRunning = false;
+            successOverlay.classList.remove('hidden');
+            successOverlay.classList.add('flex');
+            playTone(800, 100);
+            setTimeout(() => playTone(1200, 300), 150);
+        }
+
+        function closeSuccess() {
+            successOverlay.classList.add('hidden');
+            successOverlay.classList.remove('flex');
+        }
+
+        function nextLevel() {
+            closeSuccess();
+            let select = document.getElementById('missionSelect');
+            if (select.selectedIndex < select.options.length - 1) {
+                select.selectedIndex++;
+                select.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // --- Interpreter (Updated for C++/Arduino Syntax) ---
+        function parseCode(source) {
+            const lines = source.split('\n');
+            const commands = [];
+            
+            lines.forEach((line, index) => {
+                let cleanLine = line.split('//')[0].trim();
+                if (!cleanLine) return;
+                
+                // Skip C++ boilerplate
+                if (cleanLine.startsWith('#') || 
+                    cleanLine.startsWith('void') || 
+                    cleanLine === '{' || 
+                    cleanLine === '}') return;
+
+                // Regex for commands
+                let match = cleanLine.match(/([a-zA-Z0-9_]+)\((.*)\);?/);
+                if (match) {
+                    let cmd = match[1]; // Case sensitive match first, then normalize
+                    let argsStr = match[2];
+                    let args = [];
+                    
+                    if (argsStr.includes('"')) {
+                        let strMatch = argsStr.match(/"([^"]+)"/);
+                        if (strMatch) args.push(strMatch[1]);
+                        let numMatch = argsStr.split(',')[0].trim();
+                        if (!isNaN(numMatch)) args.unshift(parseInt(numMatch));
+                    } else {
+                        args = argsStr.split(',').map(s => parseFloat(s.trim()));
+                    }
+
+                    // Normalize Command to internal format
+                    let type = cmd.toLowerCase();
+                    
+                    // Map Arduino/POP32 commands to internal Simulator commands
+                    if (type === 'delay') type = 'sleep';
+                    if (type === 'fd') type = 'fd'; // keep same
+                    if (type === 'bk') type = 'bk';
+                    if (type === 'sl') type = 'sl';
+                    if (type === 'sr') type = 'sr';
+                    if (type === 'ao') type = 'ao';
+                    
+                    commands.push({ type: type, args: args, line: index + 1 });
+                }
+            });
+            
+            // Ensure stop at end
+            commands.push({ type: 'ao', args: [] });
+            return commands;
+        }
+
+        function runSimulation() {
+            if (isRunning) return;
+            commandQueue = parseCode(editor.value);
+            if (commandQueue.length === 0) { alert("กรุณาเขียนโค้ด"); return; }
+            isRunning = true;
+            currentCommandIndex = 0; commandStartTime = 0; lastTimestamp = performance.now();
+            runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            runBtn.className = "flex-1 bg-orange-500 text-white py-2 rounded font-semibold transition flex items-center justify-center gap-2";
+            statusIndicator.innerHTML = '<span class="text-green-500">Running</span>';
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resetSimulation() {
+            isRunning = false;
+            cancelAnimationFrame(animationFrame);
+            resetScenario();
+            runBtn.innerHTML = '<i class="fas fa-play"></i> Upload & Run';
+            runBtn.className = "flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded font-semibold transition flex items-center justify-center gap-2";
+            statusIndicator.innerHTML = '<span class="text-yellow-500">Ready</span>';
+        }
+
+        function gameLoop(timestamp) {
+            if (!isRunning) return;
+            const dt = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+
+            if (currentCommandIndex < commandQueue.length) {
+                const cmd = commandQueue[currentCommandIndex];
+                if (commandStartTime === 0) { commandStartTime = timestamp; executeCommand(cmd); }
+                if (cmd.type === 'sleep') {
+                    if (timestamp - commandStartTime >= cmd.args[0]) nextCommand();
+                } else { nextCommand(); }
+            } else {
+                isRunning = false;
+                robot.speedL = 0; robot.speedR = 0; updateDashboard();
+                runBtn.innerHTML = '<i class="fas fa-check"></i> Done';
+                setTimeout(() => {
+                     runBtn.innerHTML = '<i class="fas fa-play"></i> Upload & Run';
+                     runBtn.className = "flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded font-semibold";
+                }, 1000);
+            }
+            updatePhysics(dt);
+            draw();
+            if (isRunning) animationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function nextCommand() { currentCommandIndex++; commandStartTime = 0; }
+        
+        function executeCommand(cmd) {
+            switch(cmd.type) {
+                case 'fd': robot.speedL = cmd.args[0]; robot.speedR = cmd.args[0]; break;
+                case 'bk': robot.speedL = -cmd.args[0]; robot.speedR = -cmd.args[0]; break;
+                case 'sl': robot.speedL = -cmd.args[0]; robot.speedR = cmd.args[0]; break;
+                case 'sr': robot.speedL = cmd.args[0]; robot.speedR = -cmd.args[0]; break;
+                case 'ao': robot.speedL = 0; robot.speedR = 0; break;
+                case 'motor': 
+                    // motor(channel, speed)
+                    if (cmd.args[0] === 1) robot.speedL = cmd.args[1];
+                    if (cmd.args[0] === 2) robot.speedR = cmd.args[1];
+                    break;
+                case 'servo': setGripper(cmd.args[1] !== undefined ? cmd.args[1] : cmd.args[0]); break;
+                case 'gripper': setGripper(cmd.args[0]); break;
+                case 'glcd': 
+                     if (cmd.args[0] === 0) oled.innerText = cmd.args[1];
+                     else oled.innerText += "\n" + cmd.args[1];
+                    break;
+            }
+            updateDashboard();
+        }
+
+        function setGripper(angle) {
+            robot.servoAngle = angle;
+            if (angle <= 45) attemptGrab();
+            else if (angle >= 80) attemptDrop();
+        }
+
+        function playTone(freq, duration) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioCtx = new AudioContext();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            setTimeout(() => osc.stop(), duration);
+        }
+
+        function updateDashboard() {
+            motorLDisp.innerText = Math.round(robot.speedL);
+            motorRDisp.innerText = Math.round(robot.speedR);
+            servoDisp.innerText = robot.servoAngle + "°";
+        }
+
+        // --- UI Interactions ---
+        const missionSelect = document.getElementById('missionSelect');
+        const missionBox = document.getElementById('missionBox');
+        const missionText = document.getElementById('missionText');
+        const successOverlay = document.getElementById('successOverlay');
+
+        missionSelect.addEventListener('change', (e) => {
+            currentLevel = e.target.value;
+            setMissionUI(currentLevel);
+            resetSimulation();
+        });
+
+        function setMissionUI(level) {
+            missionBox.classList.remove('hidden');
+            missionBox.classList.add('flex');
+            
+            let text = "";
+            let codeBody = "";
+            let setupBody = "  oled.text(0, 0, \"Starting...\");";
+
+            switch(level) {
+                case 'lv1': 
+                    text = "ด่าน 1: เดินหน้าไปยังคณะวิศวกรรมศาสตร์ (สีแดง)";
+                    codeBody = "  FD(50);\n  delay(3500);\n  SL(40);\n  delay(1200);\n  FD(50);\n  delay(3000);\n  AO();";
+                    break;
+                case 'lv2':
+                    text = "ด่าน 2: เดินทางไปคณะวิทยาศาสตร์ (สีเหลือง)";
+                    codeBody = "  FD(50);\n  delay(5000);\n  AO();";
+                    break;
+                case 'lv3':
+                    text = "ด่าน 3: เลี้ยวซ้ายไปคณะแพทย์ (สีฟ้า)";
+                    codeBody = "  FD(50);\n  delay(2000);\n  SL(50);\n  delay(1000);\n  FD(50);\n  delay(3000);\n  AO();";
+                    break;
+                case 'lv4':
+                    text = "ด่าน 4: เดินไกลไปคณะเกษตร (สีเขียว)";
+                    codeBody = "  FD(50); delay(5000);\n  SR(50); delay(1000);\n  FD(50); delay(3000);\n  AO();";
+                    break;
+                case 'lv5':
+                    text = "ด่าน 5: คีบกระป๋องส้มจากจุด Start ไปส่งที่วิศวะ";
+                    codeBody = "  // กางแขน\n  servo(1, 90);\n  FD(30); delay(800); AO();\n\n  // คีบ\n  servo(1, 20);\n  delay(500);\n\n  // เดินทาง\n  FD(50); delay(3000);\n  SL(40); delay(1200);\n  FD(50); delay(3000);\n  AO();\n\n  // วาง\n  servo(1, 90);";
+                    break;
+                case 'lv6':
+                    text = "ด่าน 6: ย้ายของจากคณะวิทย์ ไปส่งคณะแพทย์";
+                    codeBody = "  servo(1, 90);\n  FD(30); delay(800); AO();\n  servo(1, 20); delay(500);\n\n  BK(40); delay(1500);\n  SL(50); delay(1000);\n  FD(50); delay(3000);\n  AO();";
+                    break;
+                case 'lv7':
+                    text = "ด่าน 7: เดินวนรอบเกาะกลาง 1 รอบ";
+                    codeBody = "  FD(50); delay(4000);\n  SL(50); delay(1000);\n  FD(40); delay(2000);\n  SL(50); delay(1000);\n  FD(50); delay(4000);\n  SL(50); delay(1000);\n  FD(40); delay(2000);\n  AO();";
+                    break;
+                case 'lv8':
+                    text = "ด่าน 8: เริ่มที่วิทย์ -> ผ่านจุดเช็คพอยต์ -> จบที่เกษตร";
+                    codeBody = "  FD(40); delay(1500);\n  SR(50); delay(1000);\n  FD(50); delay(4000);\n  AO();";
+                    break;
+                case 'lv9':
+                    text = "ด่าน 9: ถอยหลังเข้าจอดในช่องจอดรถ (Parking)";
+                    codeBody = "  FD(30); delay(1500);\n  SL(50); delay(1000);\n  BK(30); delay(3000);\n  AO();";
+                    break;
+                case 'lv10':
+                    text = "ด่าน 10: Grand Tour";
+                    codeBody = "  // เขียนโค้ดของคุณที่นี่...\n";
+                    break;
+                default:
+                    missionBox.classList.add('hidden');
+                    missionBox.classList.remove('flex');
+                    codeBody = "  FD(50);\n  delay(1000);\n  AO();";
+            }
+            
+            missionText.innerText = text;
+            // Generate full Arduino Template
+            editor.value = `#include <POP32.h>\n\nvoid setup() {\n${setupBody}\n}\n\nvoid loop() {\n${codeBody}\n}`;
+        }
+
+        function showHelp() { document.getElementById('helpModal').classList.remove('hidden'); }
+        function closeHelp() { document.getElementById('helpModal').classList.add('hidden'); }
+
+        // Start
+        resizeCanvas();
+        setMissionUI('lv1');
+        
+    </script>
+</body>
+</html>
