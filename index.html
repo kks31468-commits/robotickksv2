@@ -2,113 +2,88 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POP32i Simulator: Pro Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>POP32i Simulator: Ultimate Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=Source+Code+Pro:wght@400;700&display=swap');
         
-        body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #f3f4f6;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .code-font {
-            font-family: 'Source Code Pro', monospace;
-        }
-
+        body { font-family: 'Prompt', sans-serif; background-color: #111827; height: 100vh; overflow: hidden; color: #e5e7eb; }
+        .code-font { font-family: 'Source Code Pro', monospace; }
+        
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1f2937; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
         .canvas-bg {
-            background-color: #e5e7eb;
+            background-image: linear-gradient(#374151 1px, transparent 1px), linear-gradient(90deg, #374151 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-color: #1f2937;
             cursor: grab;
+            touch-action: none; /* Prevent browser scrolling on canvas */
         }
         .canvas-bg:active { cursor: grabbing; }
         
         optgroup { font-weight: bold; color: #fbbf24; background-color: #3730a3; }
         option { color: white; background-color: #4338ca; }
 
-        /* Autocomplete Styles */
+        /* Autocomplete & Tooltips */
         #suggestionBox {
-            position: absolute;
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-            z-index: 50;
-            max-height: 200px;
-            overflow-y: auto;
-            min-width: 150px;
-            display: none;
+            position: absolute; background: #1f2937; border: 1px solid #4b5563; border-radius: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); z-index: 50; max-height: 200px;
+            overflow-y: auto; min-width: 200px; display: none;
         }
-        .suggestion-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            color: #e5e7eb;
-            font-family: 'Source Code Pro', monospace;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .suggestion-item:hover, .suggestion-item.active {
-            background-color: #374151;
-            color: #60a5fa;
-        }
-        .suggestion-desc {
-            font-size: 10px;
-            color: #9ca3af;
-            margin-left: 10px;
-        }
+        .suggestion-item { padding: 8px 12px; cursor: pointer; color: #e5e7eb; font-family: 'Source Code Pro', monospace; font-size: 13px; display: flex; justify-content: space-between; }
+        .suggestion-item:hover, .suggestion-item.active { background-color: #2563eb; color: white; }
+        
+        .cmd-btn:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .cmd-btn:active { transform: translateY(0); }
 
-        /* Toolbar Button Hover */
-        .cmd-btn:hover { transform: translateY(-1px); }
-        .cmd-btn:active { transform: translateY(1px); }
+        /* Animations */
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        .btn-run { animation: pulse-glow 2s infinite; }
     </style>
 </head>
-<body class="flex flex-col h-screen text-gray-800">
+<body class="flex flex-col h-screen">
 
     <!-- Header -->
-    <header class="bg-indigo-900 text-white p-3 shadow-md flex justify-between items-center shrink-0 z-20 border-b border-indigo-700">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-indigo-900 font-bold text-xl shadow-lg">
-                <i class="fas fa-robot"></i>
+    <header class="bg-gray-900 border-b border-gray-700 p-2 md:p-3 shadow-lg flex flex-wrap justify-between items-center shrink-0 z-30 gap-2">
+        <div class="flex items-center gap-2 md:gap-3">
+            <div class="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-lg border border-gray-600">
+                <i class="fas fa-microchip"></i>
             </div>
             <div>
-                <h1 class="text-xl font-bold text-yellow-400">POP32i Pro</h1>
-                <p class="text-xs text-indigo-200">ระบบช่วยเขียนโค้ดอัจฉริยะ</p>
+                <h1 class="text-base md:text-lg font-bold text-white tracking-wide leading-tight">POP32i <span class="text-indigo-400">IDE</span></h1>
+                <p class="text-[9px] md:text-[10px] text-gray-400 hidden sm:block">Simulator & AI Assistant</p>
             </div>
         </div>
-        <div class="flex gap-2 items-center">
-            <div class="flex flex-col items-end mr-2">
-                <label class="text-[10px] uppercase text-indigo-200 font-bold">เลือกภารกิจ</label>
-                <select id="missionSelect" class="bg-indigo-800 text-yellow-300 border border-indigo-500 rounded px-3 py-1 text-sm focus:outline-none w-64 font-medium shadow-inner">
-                    <option value="free">🛠️ โหมดอิสระ (Free Run)</option>
-                    <optgroup label="Beginner (พื้นฐาน)">
+        
+        <div class="flex gap-2 items-center flex-1 justify-end">
+            <div class="flex flex-col items-end max-w-[150px] md:max-w-none">
+                <label class="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5 hidden md:block">Current Mission</label>
+                <select id="missionSelect" class="bg-gray-800 text-indigo-300 border border-gray-600 rounded px-2 py-1 md:px-3 md:py-1.5 text-xs md:text-sm focus:outline-none focus:border-indigo-500 w-full md:w-64 transition-all">
+                    <option value="free">🛠️ Sandbox (โหมดอิสระ)</option>
+                    <optgroup label="Level 1-4: Basic Movement">
                         <option value="lv1">ด่าน 1: เดินหน้าไปวิศวะ</option>
                         <option value="lv2">ด่าน 2: เดินทางไกลไปวิทย์</option>
                         <option value="lv3">ด่าน 3: เลี้ยวซ้ายเข้าแพทย์</option>
                         <option value="lv4">ด่าน 4: เลี้ยวขวาไปเกษตร</option>
                     </optgroup>
-                    <optgroup label="Intermediate (คีบของ)">
+                    <optgroup label="Level 5-10: Gripper & Logic">
                         <option value="lv5">ด่าน 5: ส่งของด่วน (Pick & Place)</option>
                         <option value="lv6">ด่าน 6: ย้ายของข้ามตึก</option>
-                        <option value="lv7">ด่าน 7: เดินวน Loop สี่เหลี่ยม</option>
-                        <option value="lv8">ด่าน 8: เช็คพอยต์</option>
-                        <option value="lv9">ด่าน 9: ถอยจอด</option>
+                        <option value="lv7">ด่าน 7: เดินวน Loop</option>
+                        <option value="lv8">ด่าน 8: Checkpoint</option>
+                        <option value="lv9">ด่าน 9: ถอยจอดเข้าซอง</option>
                         <option value="lv10">ด่าน 10: ขนส่งอัจฉริยะ (Full)</option>
                     </optgroup>
-                    <optgroup label="Expert (ระดับเทพ)">
+                    <optgroup label="Level 11-20: Expert Challenges">
                         <option value="lv11">ด่าน 11: ซิกแซก (Slalom)</option>
                         <option value="lv12">ด่าน 12: กลับรถตัว U</option>
-                        <option value="lv13">ด่าน 13: เลข 8</option>
+                        <option value="lv13">ด่าน 13: เลข 8 มหัศจรรย์</option>
                         <option value="lv14">ด่าน 14: ก้นหอย (Spiral)</option>
                         <option value="lv15">ด่าน 15: ถอยหลังยาว</option>
                         <option value="lv16">ด่าน 16: ส่ง 3 จุด</option>
@@ -119,550 +94,693 @@
                     </optgroup>
                 </select>
             </div>
-            <button onclick="openAI()" class="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 px-4 py-2 rounded-full text-sm transition h-full text-white shadow-lg flex items-center gap-2 border border-cyan-300">
-                <i class="fas fa-sparkles"></i> AI Helper
+            
+            <button onclick="openAI()" class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white px-2 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold shadow-lg flex items-center gap-1 md:gap-2 border border-blue-400/30 transition-all transform hover:scale-105">
+                <i class="fas fa-robot"></i> <span class="hidden sm:inline">AI Helper</span>
+            </button>
+            
+            <button onclick="openManual()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold shadow flex items-center gap-1 md:gap-2 border border-gray-600 transition-all">
+                <i class="fas fa-book"></i> <span class="hidden sm:inline">คู่มือ</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <div class="flex flex-1 overflow-hidden">
+    <!-- Main Workspace (Responsive Layout) -->
+    <!-- iPad/Desktop: Row (Side by Side) | Mobile: Column (Stack) -->
+    <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
         
-        <!-- Left: Code Editor Area -->
-        <div class="w-1/3 bg-gray-900 flex flex-col border-r border-gray-700 relative z-10 shadow-xl">
-            <!-- File Tab -->
-            <div class="bg-gray-800 text-gray-300 px-4 py-1 text-xs font-mono flex justify-between items-center border-b border-gray-700">
-                <span><i class="fas fa-file-code mr-1 text-blue-400"></i> main.cpp</span>
-                <span id="statusIndicator" class="text-yellow-500"><i class="fas fa-circle text-[8px] mr-1"></i>Ready</span>
-            </div>
-
-            <!-- Command Toolbar (Quick Insert) -->
-            <div class="bg-gray-800 p-2 grid grid-cols-4 gap-1 border-b border-gray-700">
-                <button onclick="insertCode('FD(50); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-green-400 text-xs py-1 rounded border border-gray-600 font-mono transition" title="เดินหน้า">FD</button>
-                <button onclick="insertCode('BK(50); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-green-400 text-xs py-1 rounded border border-gray-600 font-mono transition" title="ถอยหลัง">BK</button>
-                <button onclick="insertCode('SL(50); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-yellow-400 text-xs py-1 rounded border border-gray-600 font-mono transition" title="หมุนซ้าย">SL</button>
-                <button onclick="insertCode('SR(50); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-yellow-400 text-xs py-1 rounded border border-gray-600 font-mono transition" title="หมุนขวา">SR</button>
-                
-                <button onclick="insertCode('delay(1000); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-blue-300 text-xs py-1 rounded border border-gray-600 font-mono transition" title="หน่วงเวลา">Delay</button>
-                <button onclick="insertCode('AO(); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-red-400 text-xs py-1 rounded border border-gray-600 font-mono transition" title="หยุด">AO</button>
-                <button onclick="insertCode('servo(1, 90); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-purple-400 text-xs py-1 rounded border border-gray-600 font-mono transition" title="กาง/หุบ แขน">Servo</button>
-                <button onclick="insertCode('oled.text(0,0,\"\"); ')" class="cmd-btn bg-gray-700 hover:bg-gray-600 text-cyan-400 text-xs py-1 rounded border border-gray-600 font-mono transition" title="แสดงข้อความ">OLED</button>
+        <!-- Code Editor Section -->
+        <div class="w-full h-1/2 md:h-full md:w-[45%] lg:w-[40%] bg-gray-900 flex flex-col border-b md:border-b-0 md:border-r border-gray-700 relative z-10 shadow-2xl order-1">
+            <!-- Toolbar -->
+            <div class="bg-gray-800 p-2 flex flex-wrap gap-1 border-b border-gray-700 select-none overflow-x-auto whitespace-nowrap">
+                <button onclick="insertCode('FD(50); ')" class="cmd-btn bg-gray-700 text-green-400 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">FD</button>
+                <button onclick="insertCode('BK(50); ')" class="cmd-btn bg-gray-700 text-red-400 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">BK</button>
+                <button onclick="insertCode('SL(50); ')" class="cmd-btn bg-gray-700 text-yellow-400 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">SL</button>
+                <button onclick="insertCode('SR(50); ')" class="cmd-btn bg-gray-700 text-yellow-400 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">SR</button>
+                <div class="w-px h-6 bg-gray-600 mx-1"></div>
+                <button onclick="insertCode('delay(1000); ')" class="cmd-btn bg-gray-700 text-blue-300 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">delay</button>
+                <button onclick="insertCode('AO(); ')" class="cmd-btn bg-gray-700 text-red-500 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">AO</button>
+                <button onclick="insertCode('servo(1, 90); ')" class="cmd-btn bg-gray-700 text-purple-400 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">servo</button>
+                <button onclick="insertCode('oled.text(0,0,\"\"); ')" class="cmd-btn bg-gray-700 text-cyan-400 text-xs px-2 py-1.5 rounded border border-gray-600 font-mono font-bold">oled</button>
             </div>
             
-            <!-- Editor with Autocomplete Container -->
-            <div class="relative flex-1 overflow-hidden group">
-                <textarea id="codeEditor" class="w-full h-full bg-gray-900 text-green-400 code-font p-4 outline-none resize-none text-sm leading-relaxed" spellcheck="false" placeholder="// พิมพ์ 'F' เพื่อเริ่มใช้ Autocomplete..."></textarea>
-                <!-- Autocomplete Popup -->
+            <!-- Editor Area -->
+            <div class="relative flex-1 group min-h-0">
+                <div class="absolute left-0 top-0 bottom-0 w-8 bg-gray-800 text-gray-500 text-[10px] pt-4 text-right pr-2 select-none border-r border-gray-700 font-mono leading-relaxed" id="lineNumbers">1</div>
+                <textarea id="codeEditor" class="w-full h-full bg-[#0d1117] text-gray-100 code-font p-4 pl-10 outline-none resize-none text-sm leading-relaxed" spellcheck="false" placeholder="// เริ่มต้นเขียนโค้ดที่นี่..."></textarea>
                 <div id="suggestionBox"></div>
-                <!-- Mirror div for cursor position calculation -->
-                <div id="mirrorDiv" class="absolute top-0 left-0 w-full h-full p-4 text-sm leading-relaxed code-font whitespace-pre-wrap invisible pointer-events-none z-0"></div>
             </div>
 
-            <!-- Bottom Controls -->
-            <div class="p-4 bg-gray-800 border-t border-gray-700 flex gap-2">
-                <button onclick="runSimulation()" id="runBtn" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-green-900/50">
-                    <i class="fas fa-play"></i> Upload & Run
+            <!-- Action Bar -->
+            <div class="p-2 md:p-3 bg-gray-800 border-t border-gray-700 flex gap-2 items-center justify-end">
+                <div id="statusIndicator" class="text-[10px] md:text-xs font-mono mr-auto flex items-center gap-1 md:gap-2 px-2 py-1 bg-gray-900 rounded border border-gray-700 text-yellow-500 hidden sm:flex">
+                    <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> READY
+                </div>
+                <button onclick="resetSimulation()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 md:px-4 md:py-2 rounded font-bold text-xs md:text-sm transition flex items-center gap-2 border border-gray-600">
+                    <i class="fas fa-undo"></i> <span class="hidden sm:inline">รีเซ็ต</span>
                 </button>
-                <button onclick="resetSimulation()" class="bg-gray-600 hover:bg-gray-500 text-white px-4 rounded-lg font-bold transition shadow-lg">
-                    <i class="fas fa-undo"></i>
+                <button onclick="runSimulation()" id="runBtn" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 md:px-6 md:py-2 rounded font-bold text-xs md:text-sm transition flex items-center gap-2 shadow-lg shadow-green-900/50 btn-run">
+                    <i class="fas fa-play"></i> <span id="runBtnText">Upload & Run</span>
                 </button>
             </div>
         </div>
 
-        <!-- Right: Simulation Area -->
-        <div class="flex-1 flex flex-col relative bg-gray-100 overflow-hidden">
+        <!-- Simulation Canvas Section -->
+        <div class="flex-1 flex flex-col relative bg-[#1f2937] overflow-hidden order-2 min-h-0">
             <!-- HUD -->
-            <div class="absolute top-4 left-4 z-10 flex gap-2 flex-wrap pointer-events-none">
-                <div class="bg-white/90 backdrop-blur shadow-lg rounded-lg p-3 w-48 border border-gray-200 pointer-events-auto">
-                    <div class="text-xs text-gray-500 uppercase font-bold mb-1">OLED Display</div>
-                    <div id="oledScreen" class="bg-black text-cyan-400 font-mono text-xs p-2 h-16 rounded overflow-hidden leading-tight whitespace-pre-wrap">POP32i Ready...</div>
+            <div class="absolute top-2 left-2 md:top-4 md:left-4 z-10 flex flex-col gap-2 pointer-events-none">
+                <!-- OLED -->
+                <div class="bg-black/80 backdrop-blur border-2 border-gray-600 rounded-lg p-1 w-32 md:w-40 pointer-events-auto shadow-xl">
+                    <div class="text-[8px] md:text-[9px] text-gray-400 text-center uppercase tracking-widest mb-1 border-b border-gray-800">POP32i OLED</div>
+                    <div id="oledScreen" class="text-cyan-400 font-mono text-[9px] md:text-[10px] p-1 md:p-2 h-12 md:h-16 overflow-hidden whitespace-pre-wrap leading-tight">System Ready...</div>
                 </div>
-                <div class="bg-white/90 backdrop-blur shadow-lg rounded-lg p-3 border border-gray-200 flex flex-col justify-center min-w-[100px] pointer-events-auto">
-                    <div class="text-xs text-gray-500 uppercase font-bold mb-1">Status</div>
-                    <div class="text-xs space-y-1">
-                        <div><span class="font-bold text-gray-700">M1:</span> <span id="motorL" class="text-blue-600">0</span> <span class="font-bold text-gray-700 ml-1">M2:</span> <span id="motorR" class="text-blue-600">0</span></div>
-                        <div><span class="font-bold text-gray-700">Servo:</span> <span id="servoVal" class="text-purple-600">90°</span></div>
-                    </div>
+                <!-- Motors -->
+                <div class="bg-gray-800/90 backdrop-blur border border-gray-600 rounded p-2 pointer-events-auto shadow-lg min-w-[100px] md:min-w-[120px]">
+                    <div class="flex justify-between text-[10px] md:text-xs font-mono mb-1 text-gray-400"><span>L</span><span id="motorL" class="text-green-400 font-bold">0</span></div>
+                    <div class="flex justify-between text-[10px] md:text-xs font-mono mb-1 text-gray-400"><span>R</span><span id="motorR" class="text-green-400 font-bold">0</span></div>
+                    <div class="h-px bg-gray-600 my-1"></div>
+                    <div class="flex justify-between text-[10px] md:text-xs font-mono text-gray-400"><span>Sv</span><span id="servoVal" class="text-purple-400 font-bold">90°</span></div>
                 </div>
             </div>
 
             <!-- Controls -->
-            <div class="absolute bottom-6 right-6 z-10 flex flex-col gap-2">
-                <button onclick="zoomIn()" class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-indigo-600 font-bold"><i class="fas fa-plus"></i></button>
-                <button onclick="resetCamera()" class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-indigo-600"><i class="fas fa-compress"></i></button>
-                <button onclick="zoomOut()" class="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-600 hover:text-indigo-600 font-bold"><i class="fas fa-minus"></i></button>
+            <div class="absolute bottom-4 right-4 md:bottom-6 md:right-6 z-10 flex flex-col gap-2">
+                <button onclick="zoomIn()" class="w-8 h-8 md:w-10 md:h-10 bg-gray-700/80 hover:bg-gray-600 text-white rounded-full shadow-lg flex items-center justify-center font-bold border border-gray-500 transition backdrop-blur"><i class="fas fa-plus text-xs md:text-base"></i></button>
+                <button onclick="resetCamera()" class="w-8 h-8 md:w-10 md:h-10 bg-gray-700/80 hover:bg-gray-600 text-white rounded-full shadow-lg flex items-center justify-center font-bold border border-gray-500 transition backdrop-blur"><i class="fas fa-compress text-xs md:text-base"></i></button>
+                <button onclick="zoomOut()" class="w-8 h-8 md:w-10 md:h-10 bg-gray-700/80 hover:bg-gray-600 text-white rounded-full shadow-lg flex items-center justify-center font-bold border border-gray-500 transition backdrop-blur"><i class="fas fa-minus text-xs md:text-base"></i></button>
             </div>
 
-            <canvas id="simCanvas" class="w-full h-full canvas-bg block"></canvas>
+            <canvas id="simCanvas" class="w-full h-full canvas-bg block touch-none"></canvas>
 
             <!-- Mission Popup -->
-            <div id="missionBox" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur shadow-xl rounded-full px-6 py-3 border border-indigo-200 hidden items-center gap-3 animate-bounce z-20 pointer-events-none">
-                <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><i class="fas fa-flag-checkered"></i></div>
-                <div><div class="text-xs text-gray-500 font-bold uppercase">Current Mission</div><span id="missionText" class="text-sm font-semibold text-gray-800">Mission</span></div>
+            <div id="missionBox" class="absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800/95 backdrop-blur shadow-2xl rounded-full px-4 py-2 md:px-6 md:py-3 border border-indigo-500 flex items-center gap-3 md:gap-4 animate-bounce z-20 pointer-events-none min-w-[250px] md:min-w-[300px] justify-center">
+                <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs md:text-sm"><i class="fas fa-flag"></i></div>
+                <div>
+                    <div class="text-[8px] md:text-[10px] text-indigo-300 font-bold uppercase tracking-wider">Mission Objective</div>
+                    <span id="missionText" class="text-xs md:text-sm font-semibold text-white">Select a mission</span>
+                </div>
             </div>
 
             <!-- Success Overlay -->
-            <div id="successOverlay" class="absolute inset-0 bg-black/80 hidden flex-col items-center justify-center text-white z-50 backdrop-blur-sm">
-                <div class="text-6xl text-yellow-400 mb-4 animate-pulse"><i class="fas fa-star"></i></div>
-                <h2 class="text-4xl font-bold mb-2">Mission Complete!</h2>
-                <div class="flex gap-4 mt-8">
-                    <button onclick="closeSuccess()" class="bg-gray-600 hover:bg-gray-500 px-6 py-2 rounded-full font-bold">เล่นซ้ำ</button>
-                    <button onclick="nextLevel()" class="bg-indigo-600 hover:bg-indigo-500 px-8 py-2 rounded-full font-bold">ด่านต่อไป <i class="fas fa-arrow-right"></i></button>
+            <div id="successOverlay" class="absolute inset-0 bg-black/80 backdrop-blur-sm hidden flex-col items-center justify-center text-white z-50 p-4 text-center">
+                <div class="text-5xl md:text-6xl text-yellow-400 mb-4 md:mb-6 animate-bounce drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]"><i class="fas fa-trophy"></i></div>
+                <h2 class="text-3xl md:text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Mission Complete!</h2>
+                <p class="text-gray-400 mb-6 md:mb-8 font-mono text-xs md:text-sm">ภารกิจสำเร็จ! สุดยอดมากครับ</p>
+                <div class="flex gap-4">
+                    <button onclick="closeSuccess()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 md:px-6 md:py-2 rounded-lg font-bold border border-gray-500 transition text-sm md:text-base">เล่นซ้ำ</button>
+                    <button onclick="nextLevel()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 md:px-8 md:py-2 rounded-lg font-bold border border-indigo-400 shadow-lg shadow-indigo-900/50 transition transform hover:scale-105 text-sm md:text-base">ด่านต่อไป <i class="fas fa-arrow-right ml-2"></i></button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- AI Modal -->
-    <div id="aiModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-cyan-200">
-            <div class="bg-gradient-to-r from-indigo-900 to-indigo-800 p-4 flex items-center justify-between border-b border-indigo-700">
+    <!-- AI Helper Modal -->
+    <div id="aiModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-600 transform transition-all scale-100 flex flex-col max-h-[80vh]">
+            <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-4 flex items-center justify-between border-b border-gray-700 shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-cyan-400 rounded-full flex items-center justify-center text-indigo-900 font-bold text-xl shadow-inner animate-pulse"><i class="fas fa-robot"></i></div>
-                    <div><h3 class="text-lg font-bold text-white">POP-AI Assistant</h3></div>
+                    <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-inner"><i class="fas fa-robot"></i></div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">POP-AI Assistant</h3>
+                        <p class="text-[10px] text-green-400 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Online & Ready</p>
+                    </div>
                 </div>
-                <button onclick="closeAI()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times"></i></button>
+                <button onclick="closeAI()" class="text-gray-400 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="p-6 bg-gray-50 min-h-[200px]"><div id="aiChatContent" class="space-y-4"></div></div>
-            <div class="p-4 bg-white border-t border-gray-100 grid grid-cols-1 gap-2">
-                <button onclick="aiGetHint()" class="btn-ai bg-yellow-100 text-yellow-800 py-3 rounded-xl border border-yellow-200 font-bold">💡 ขอคำใบ้</button>
-                <button onclick="aiCheckCode()" class="btn-ai bg-blue-100 text-blue-800 py-3 rounded-xl border border-blue-200 font-bold">🔍 ตรวจโค้ด</button>
-                <button onclick="aiRevealSolution()" class="btn-ai bg-red-50 text-red-800 py-2 rounded-xl border border-red-100 text-sm">🔓 ดูเฉลย</button>
+            
+            <div class="p-4 bg-gray-900 flex-1 overflow-y-auto space-y-3" id="aiChatContent">
+                <!-- Chat messages -->
+            </div>
+
+            <div class="p-4 bg-gray-800 border-t border-gray-700 grid grid-cols-2 gap-3 shrink-0">
+                <button onclick="aiGetHint()" class="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 py-3 rounded-lg border border-yellow-600/50 font-bold text-sm transition flex items-center justify-center gap-2">
+                    <i class="fas fa-lightbulb"></i> <span class="hidden sm:inline">ขอคำใบ้</span><span class="sm:hidden">Hint</span>
+                </button>
+                <button onclick="aiCheckCode()" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 py-3 rounded-lg border border-blue-600/50 font-bold text-sm transition flex items-center justify-center gap-2">
+                    <i class="fas fa-search"></i> ตรวจโค้ด
+                </button>
+                <button onclick="aiRevealSolution()" class="col-span-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 py-2 rounded-lg border border-red-600/50 font-bold text-xs transition flex items-center justify-center gap-2 mt-1">
+                    <i class="fas fa-unlock"></i> ยอมแพ้ (ดูเฉลยโค้ด)
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Audio -->
+    <!-- Manual Modal -->
+    <div id="manualModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="p-4 bg-gray-100 border-b flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-lg text-gray-800"><i class="fas fa-book mr-2"></i> คู่มือคำสั่ง POP32i</h3>
+                <button onclick="closeManual()" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto bg-white text-gray-800 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div>
+                        <h4 class="font-bold text-indigo-700 border-b pb-1 mb-2">1. การเคลื่อนที่ (Movement)</h4>
+                        <ul class="space-y-2 font-mono text-xs md:text-sm">
+                            <li class="flex justify-between"><span class="bg-gray-100 px-2 rounded text-red-600 font-bold">FD(speed)</span> <span class="text-gray-500 font-sans">เดินหน้า (0-100)</span></li>
+                            <li class="flex justify-between"><span class="bg-gray-100 px-2 rounded text-red-600 font-bold">BK(speed)</span> <span class="text-gray-500 font-sans">ถอยหลัง (0-100)</span></li>
+                            <li class="flex justify-between"><span class="bg-gray-100 px-2 rounded text-red-600 font-bold">SL(speed)</span> <span class="text-gray-500 font-sans">หมุนซ้าย</span></li>
+                            <li class="flex justify-between"><span class="bg-gray-100 px-2 rounded text-red-600 font-bold">SR(speed)</span> <span class="text-gray-500 font-sans">หมุนขวา</span></li>
+                            <li class="flex justify-between"><span class="bg-gray-100 px-2 rounded text-red-600 font-bold">AO()</span> <span class="text-gray-500 font-sans">หยุดมอเตอร์</span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-indigo-700 border-b pb-1 mb-2">2. อุปกรณ์เสริม (Devices)</h4>
+                        <ul class="space-y-2 font-mono text-xs md:text-sm">
+                            <li class="flex flex-col mb-1">
+                                <span class="bg-gray-100 px-2 rounded text-purple-600 font-bold w-fit">servo(1, angle)</span>
+                                <span class="text-gray-500 text-xs font-sans mt-1 pl-2">คุมเซอร์โวช่อง 1 (มุม 0-180)<br>เช่น 20=หนีบ, 90=กาง</span>
+                            </li>
+                            <li class="flex flex-col">
+                                <span class="bg-gray-100 px-2 rounded text-blue-600 font-bold w-fit">oled.text(line, col, "text")</span>
+                                <span class="text-gray-500 text-xs font-sans mt-1 pl-2">แสดงข้อความบนจอ</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="md:col-span-2">
+                        <h4 class="font-bold text-indigo-700 border-b pb-1 mb-2">3. ควบคุมเวลา (Time)</h4>
+                        <p class="font-mono bg-gray-100 p-2 rounded text-blue-600 font-bold">delay(ms);</p>
+                        <p class="text-gray-500 text-xs mt-1">หน่วงเวลาเป็นมิลลิวินาที (1000 ms = 1 วินาที)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-gray-50 flex justify-end shrink-0">
+                <button onclick="closeManual()" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 font-bold">เข้าใจแล้ว</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Engine -->
     <audio id="beepSound" src="data:audio/wav;base64,UklGRl9vT1dAVXphcnQAAAAAAAAAAAAAAABwY20gAAAAAGAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="></audio>
 
     <script>
-        // --- Autocomplete System ---
-        const keywords = [
-            { text: 'FD(50);', desc: 'เดินหน้า' },
-            { text: 'BK(50);', desc: 'ถอยหลัง' },
-            { text: 'SL(50);', desc: 'หมุนซ้าย' },
-            { text: 'SR(50);', desc: 'หมุนขวา' },
-            { text: 'AO();', desc: 'หยุดมอเตอร์' },
-            { text: 'delay(1000);', desc: 'หน่วงเวลา (ms)' },
-            { text: 'servo(1, 90);', desc: 'เซอร์โว (ช่อง, องศา)' },
-            { text: 'motor(1, 50);', desc: 'มอเตอร์แยก (ช่อง, ความเร็ว)' },
-            { text: 'oled.text(0,0,"");', desc: 'จอภาพ' },
-            { text: 'void setup() {}', desc: 'ฟังก์ชันตั้งค่า' },
-            { text: 'void loop() {}', desc: 'ฟังก์ชันวนซ้ำ' }
-        ];
-
-        const editorArea = document.getElementById('codeEditor');
-        const suggestionBox = document.getElementById('suggestionBox');
-        const mirrorDiv = document.getElementById('mirrorDiv');
-        let selectedSuggestionIndex = 0;
-
-        editorArea.addEventListener('input', updateSuggestions);
-        editorArea.addEventListener('keydown', handleKeyNavigation);
-        editorArea.addEventListener('click', () => suggestionBox.style.display = 'none');
-
-        function insertCode(code) {
-            const start = editorArea.selectionStart;
-            const end = editorArea.selectionEnd;
-            const text = editorArea.value;
-            const before = text.substring(0, start);
-            const after = text.substring(end, text.length);
-            
-            editorArea.value = before + code + after;
-            editorArea.selectionStart = editorArea.selectionEnd = start + code.length;
-            editorArea.focus();
-            suggestionBox.style.display = 'none';
-        }
-
-        function updateSuggestions(e) {
-            const text = editorArea.value;
-            const cursor = editorArea.selectionStart;
-            
-            // Get word before cursor
-            let start = cursor - 1;
-            while (start >= 0 && /[a-zA-Z0-9_.]/.test(text[start])) {
-                start--;
-            }
-            start++;
-            
-            const currentWord = text.substring(start, cursor);
-            
-            if (currentWord.length < 1) {
-                suggestionBox.style.display = 'none';
-                return;
-            }
-
-            const matches = keywords.filter(k => k.text.toLowerCase().startsWith(currentWord.toLowerCase()));
-
-            if (matches.length > 0) {
-                renderSuggestions(matches, start, cursor);
-                positionSuggestionBox(cursor);
-            } else {
-                suggestionBox.style.display = 'none';
-            }
-        }
-
-        function renderSuggestions(matches, wordStart, wordEnd) {
-            suggestionBox.innerHTML = '';
-            selectedSuggestionIndex = 0;
-            
-            matches.forEach((match, index) => {
-                const div = document.createElement('div');
-                div.className = `suggestion-item ${index === 0 ? 'active' : ''}`;
-                div.innerHTML = `<span>${match.text}</span><span class="suggestion-desc">${match.desc}</span>`;
-                div.onclick = () => {
-                    const text = editorArea.value;
-                    const before = text.substring(0, wordStart);
-                    const after = text.substring(wordEnd);
-                    editorArea.value = before + match.text + after;
-                    editorArea.selectionStart = editorArea.selectionEnd = before.length + match.text.length;
-                    suggestionBox.style.display = 'none';
-                    editorArea.focus();
-                };
-                suggestionBox.appendChild(div);
-            });
-            suggestionBox.style.display = 'block';
-        }
-
-        function handleKeyNavigation(e) {
-            if (suggestionBox.style.display !== 'block') return;
-
-            const items = suggestionBox.getElementsByClassName('suggestion-item');
-            
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                items[selectedSuggestionIndex].classList.remove('active');
-                selectedSuggestionIndex = (selectedSuggestionIndex + 1) % items.length;
-                items[selectedSuggestionIndex].classList.add('active');
-                items[selectedSuggestionIndex].scrollIntoView({ block: 'nearest' });
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                items[selectedSuggestionIndex].classList.remove('active');
-                selectedSuggestionIndex = (selectedSuggestionIndex - 1 + items.length) % items.length;
-                items[selectedSuggestionIndex].classList.add('active');
-                items[selectedSuggestionIndex].scrollIntoView({ block: 'nearest' });
-            } else if (e.key === 'Enter' || e.key === 'Tab') {
-                e.preventDefault();
-                items[selectedSuggestionIndex].click();
-            } else if (e.key === 'Escape') {
-                suggestionBox.style.display = 'none';
-            }
-        }
-
-        function positionSuggestionBox(cursorPos) {
-            // Simplified cursor positioning using mirror div
-            const text = editorArea.value.substring(0, cursorPos);
-            mirrorDiv.textContent = text;
-            const span = document.createElement('span');
-            span.textContent = '.';
-            mirrorDiv.appendChild(span);
-            
-            const rect = span.getBoundingClientRect();
-            const editorRect = editorArea.getBoundingClientRect();
-            
-            // Calculate relative position
-            let top = rect.top - editorRect.top + 24; // 24px line height approx + padding
-            let left = rect.left - editorRect.left;
-
-            // Constrain
-            if(left + 200 > editorArea.clientWidth) left = editorArea.clientWidth - 200;
-            
-            suggestionBox.style.top = top + 'px';
-            suggestionBox.style.left = left + 'px';
-        }
-
-        // --- Globals & Core Logic (Same as before) ---
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
-        const runBtn = document.getElementById('runBtn');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const oled = document.getElementById('oledScreen');
-        
-        let isRunning = false;
-        let animationFrame;
-        let commandQueue = [];
-        let currentCommandIndex = 0;
-        let commandStartTime = 0;
-        let lastTimestamp = 0;
-
-        const WORLD_W = 2400;
-        const WORLD_H = 1800;
-        let camera = { x: 0, y: 0, scale: 0.5 };
-        let isDragging = false;
-        let lastMouse = { x: 0, y: 0 };
-
-        const ROBOT_SIZE = 40;
-        const ROBOT_COLOR = '#4F46E5'; 
-        let robot = { x: 0, y: 0, angle: 0, speedL: 0, speedR: 0, servoAngle: 90, holdingObject: null };
-        let currentLevel = 'lv1';
-        let cans = [];
-        let targetZones = []; 
-        let checkpoints = []; 
-        let currentCheckpointIndex = 0;
-
+        // --- 1. Level Database & Solutions (FIXED) ---
         const levelData = {
-            'free': { name: "โหมดอิสระ", hint: "ใช้แถบเครื่องมือด้านบนช่วยเขียนโค้ดได้เลยครับ", code: "// ลองเขียนโค้ดเล่นๆ ดูนะครับ\nFD(50);\ndelay(1000);\nAO();" },
-            'lv1': { name: "ด่าน 1: ไปวิศวะ", hint: "เดินหน้า 3.5 วินาที -> เลี้ยวซ้าย -> เดินหน้าต่อ", code: "FD(50); delay(3500);\nSL(40); delay(1200);\nFD(50); delay(3000);\nAO();" },
-            'lv2': { name: "ด่าน 2: ไปวิทย์", hint: "ทางตรงยาวๆ เพิ่ม delay เป็น 5000", code: "FD(50); delay(5000);\nAO();" },
+            'free': { name: "โหมดอิสระ", hint: "พื้นที่นี้สำหรับทดลองอิสระครับ ลองเขียนคำสั่งเล่นๆ ดูนะ", code: "// Sandbox Area\nFD(50);\ndelay(1000);\nAO();" },
+            'lv1': { name: "ด่าน 1: ไปวิศวะ", hint: "เดินหน้าประมาณ 3500ms แล้วเลี้ยวซ้าย แล้วเดินหน้าต่ออีกนิด", code: "FD(50); delay(3500);\nSL(40); delay(1200);\nFD(50); delay(3000);\nAO();" },
+            'lv2': { name: "ด่าน 2: ไปวิทย์", hint: "ทางตรงยาวๆ เลยครับ ใช้เวลาประมาณ 5 วินาที", code: "FD(50); delay(5000);\nAO();" },
             'lv3': { name: "ด่าน 3: ไปแพทย์", hint: "เดินหน้า -> เลี้ยวซ้าย -> เดินหน้า", code: "FD(50); delay(2000);\nSL(50); delay(1000);\nFD(50); delay(3000);\nAO();" },
-            'lv4': { name: "ด่าน 4: ไปเกษตร", hint: "ใช้คำสั่ง SR เพื่อเลี้ยวขวา", code: "FD(50); delay(5000);\nSR(50); delay(1000);\nFD(50); delay(3000);\nAO();" },
-            'lv5': { name: "ด่าน 5: ส่งของด่วน", hint: "ใช้ servo(1,20) หนีบ และ servo(1,90) ปล่อย", code: "servo(1, 90);\nFD(30); delay(800); AO();\nservo(1, 20); delay(500);\nFD(50); delay(3000);\nSL(40); delay(1200);\nFD(50); delay(3000);\nAO();\nservo(1, 90);" },
-            'lv6': { name: "ด่าน 6: ย้ายของ", hint: "คีบ -> ถอย (BK) -> เลี้ยว", code: "servo(1, 90);\nFD(30); delay(800); AO();\nservo(1, 20); delay(500);\nBK(40); delay(1500);\nSL(50); delay(1000);\nFD(50); delay(3000);\nAO();" },
-            'lv7': { name: "ด่าน 7: Loop", hint: "ทำซ้ำ 4 รอบ: เดินหน้า-เลี้ยว", code: "FD(50); delay(4000);\nSL(50); delay(1000);\nFD(40); delay(2000);\nSL(50); delay(1000);\nFD(50); delay(4000);\nSL(50); delay(1000);\nFD(40); delay(2000);\nAO();" },
-            'lv8': { name: "ด่าน 8: Checkpoint", hint: "ผ่านจุด 1 ก่อนไปเส้นชัย", code: "FD(40); delay(1500);\nSR(50); delay(1000);\nFD(50); delay(4000);\nAO();" },
-            'lv9': { name: "ด่าน 9: ถอยจอด", hint: "เดินหน้าตั้งลำ -> เลี้ยว -> ถอยหลัง", code: "FD(30); delay(1500);\nSL(50); delay(1000);\nBK(30); delay(3000);\nAO();" },
-            'lv10': { name: "ด่าน 10: Full Mission", hint: "รับวิศวะ -> ส่งวิทย์ -> รับเกษตร -> กลับ", code: `FD(50); delay(3500); SL(50); delay(800); FD(40); delay(1500); AO();\nservo(1,90); delay(500); FD(20); delay(500); AO(); servo(1,20); delay(500);\nBK(40); delay(2000); SR(50); delay(800); FD(50); delay(2000); AO();\nSL(50); delay(800); FD(30); delay(1000); AO(); servo(1,90); delay(500); BK(30); delay(1000);\nSR(50); delay(800); FD(50); delay(3000); AO();\nSL(50); delay(800); FD(30); delay(1000); AO(); servo(1,20); delay(500);\nBK(30); delay(1000); SL(50); delay(800); FD(50); delay(4000); AO(); servo(1,90);` },
-            'lv11': { name: "ด่าน 11: Slalom", hint: "ซิกแซก ซ้าย-ขวา", code: "FD(50); delay(1000);\nSL(40); delay(500);\nFD(50); delay(1000);\nSR(40); delay(500);\nFD(50); delay(1000);\nSL(40); delay(500);\nFD(50); delay(1000);\nSR(40); delay(500);\nFD(50); delay(1500);\nAO();" },
-            'lv12': { name: "ด่าน 12: U-Turn", hint: "เลี้ยว 90 สองครั้ง = 180", code: "FD(50); delay(2000);\nSL(60); delay(800);\nFD(30); delay(1000);\nSL(60); delay(800);\nFD(50); delay(2000);\nAO();" },
-            'lv13': { name: "ด่าน 13: Figure 8", hint: "วนซ้าย 1 รอบ + วนขวา 1 รอบ", code: "FD(50); delay(2000);\nSL(50); delay(1200);\nFD(40); delay(1500);\nSL(50); delay(1200);\nFD(50); delay(2000);\nSR(50); delay(1200);\nFD(40); delay(1500);\nSR(50); delay(1200);\nAO();" },
-            'lv14': { name: "ด่าน 14: Spiral", hint: "ลดเวลาเดินหน้าลงเรื่อยๆ", code: "FD(60); delay(3000); SL(50); delay(800);\nFD(50); delay(2500); SL(50); delay(800);\nFD(40); delay(2000); SL(50); delay(800);\nFD(30); delay(1500); SL(50); delay(800);\nAO();" },
-            'lv15': { name: "ด่าน 15: Long Reverse", hint: "ใช้มอเตอร์ติดลบ motor(1,-30)", code: "BK(50); delay(4000);\nmotor(1, -30); motor(2, -60); delay(1500);\nBK(30); delay(1000);\nAO();" },
-            'lv16': { name: "ด่าน 16: Multi-Drop", hint: "คีบ-วาง-ไปต่อ-คีบ", code: "servo(1, 90); FD(30); delay(500); AO(); servo(1, 20); delay(500);\nFD(50); delay(2000); AO(); servo(1, 90); delay(500); BK(20); delay(500);\nSR(50); delay(800); FD(50); delay(2000); AO();\nSL(50); delay(800); FD(40); delay(1500); AO();" },
-            'lv17': { name: "ด่าน 17: Perimeter", hint: "เดินกรอบนอกสุด", code: "FD(80); delay(4000);\nSL(50); delay(900);\nFD(80); delay(3000);\nSL(50); delay(900);\nFD(80); delay(4000);\nSL(50); delay(900);\nFD(80); delay(3000);\nAO();" },
-            'lv18': { name: "ด่าน 18: Staircase", hint: "ซ้าย-ขวา สลับฟันปลา", code: "FD(40); delay(1000); SR(50); delay(800);\nFD(40); delay(1000); SL(50); delay(800);\nFD(40); delay(1000); SR(50); delay(800);\nFD(40); delay(1000); SL(50); delay(800);\nAO();" },
-            'lv19': { name: "ด่าน 19: 360 Spin", hint: "ล้อหมุนสวนทางกัน", code: "FD(50); delay(2000);\nmotor(1, 60); motor(2, -60); delay(2500);\nFD(50); delay(2000);\nAO();" },
-            'lv20': { name: "ด่าน 20: FINAL", hint: "ใช้ทุกท่าที่เรียนมา!", code: "FD(60); delay(2000);\nSL(50); delay(800);\nFD(40); delay(1500);\nmotor(1, -40); motor(2, -20); delay(1500);\nBK(30); delay(1000);\nFD(100); delay(1500);\nAO();" }
+            'lv4': { name: "ด่าน 4: ไปเกษตร", hint: "คล้ายๆ ด่าน 2 แต่เลี้ยวขวา (SR) แทนครับ", code: "FD(50); delay(5000);\nSR(50); delay(1000);\nFD(50); delay(3000);\nAO();" },
+            'lv5': { name: "ด่าน 5: ส่งของด่วน", hint: "อย่าลืม! กางแขน (90) ก่อนเข้าหาของ แล้วค่อยหนีบ (20)", code: "servo(1, 90);\nFD(30); delay(800); AO();\nservo(1, 20); delay(500);\nFD(50); delay(3000);\nSL(40); delay(1200);\nFD(50); delay(3000);\nAO();\nservo(1, 90);" },
+            'lv6': { name: "ด่าน 6: ย้ายของ", hint: "พื้นที่แคบ! คีบเสร็จแล้วต้องถอยหลัง (BK) ก่อนเลี้ยว", code: "servo(1, 90);\nFD(30); delay(800); AO();\nservo(1, 20); delay(500);\nBK(40); delay(1500);\nSL(50); delay(1000);\nFD(50); delay(3000);\nAO();" },
+            'lv7': { name: "ด่าน 7: Loop", hint: "เดินเป็นสี่เหลี่ยม: เดินหน้า-เลี้ยว ทำซ้ำ 4 ครั้ง", code: "FD(50); delay(4000); SL(50); delay(1000);\nFD(40); delay(2000); SL(50); delay(1000);\nFD(50); delay(4000); SL(50); delay(1000);\nFD(40); delay(2000); AO();" },
+            'lv8': { name: "ด่าน 8: Checkpoint", hint: "ต้องเดินผ่านจุด Checkpoint ตรงกลางก่อนไปเส้นชัย", code: "FD(40); delay(1500);\nSR(50); delay(1000);\nFD(50); delay(4000);\nAO();" },
+            'lv9': { name: "ด่าน 9: ถอยจอด", hint: "เทคนิคคือ เดินหน้าไปตั้งลำ -> เลี้ยว -> แล้วถอยหลังยาวๆ", code: "FD(30); delay(1500);\nSL(50); delay(1000);\nBK(30); delay(3000);\nAO();" },
+            'lv10': { name: "ด่าน 10: Full Mission", hint: "งานหิน! รับของจุด A -> ส่งจุด B -> รับจุด C -> กลับบ้าน", code: "// Mission Start\nFD(50); delay(3500); SL(50); delay(800); FD(40); delay(1500); AO();\nservo(1,90); delay(500); FD(20); delay(500); AO(); servo(1,20); delay(500);\nBK(40); delay(2000); SR(50); delay(800); FD(50); delay(2000); AO();\nSL(50); delay(800); FD(30); delay(1000); AO(); servo(1,90); delay(500); BK(30); delay(1000);\nSR(50); delay(800); FD(50); delay(3000); AO();\nSL(50); delay(800); FD(30); delay(1000); AO(); servo(1,20); delay(500);\nBK(30); delay(1000); SL(50); delay(800); FD(50); delay(4000); AO(); servo(1,90);" },
+            'lv11': { name: "ด่าน 11: Slalom", hint: "โยกซ้าย โยกขวา สลับฟันปลา หลบสิ่งกีดขวาง", code: "FD(50); delay(1000); SL(40); delay(500);\nFD(50); delay(1000); SR(40); delay(500);\nFD(50); delay(1000); SL(40); delay(500);\nFD(50); delay(1000); SR(40); delay(500);\nFD(50); delay(1500); AO();" },
+            'lv12': { name: "ด่าน 12: U-Turn", hint: "การกลับรถคือการเลี้ยว 180 องศา (หรือเลี้ยว 90 สองครั้ง)", code: "FD(50); delay(2000);\nSL(60); delay(800); FD(30); delay(1000);\nSL(60); delay(800);\nFD(50); delay(2000); AO();" },
+            'lv13': { name: "ด่าน 13: Figure 8", hint: "เดินเป็นเลข 8: วนซ้าย 1 รอบ แล้ววนขวา 1 รอบ", code: "FD(50); delay(2000); SL(50); delay(1200);\nFD(40); delay(1500); SL(50); delay(1200);\nFD(50); delay(2000); SR(50); delay(1200);\nFD(40); delay(1500); SR(50); delay(1200); AO();" },
+            'lv14': { name: "ด่าน 14: Spiral", hint: "เดินวนเข้าหาจุดศูนย์กลาง ลดเวลาเดินหน้าลงเรื่อยๆ", code: "FD(60); delay(3000); SL(50); delay(800);\nFD(50); delay(2500); SL(50); delay(800);\nFD(40); delay(2000); SL(50); delay(800);\nFD(30); delay(1500); SL(50); delay(800); AO();" },
+            'lv15': { name: "ด่าน 15: Long Reverse", hint: "ขับถอยหลังยาวๆ แล้วหักพวงมาลัยเข้าจอด", code: "BK(50); delay(4000);\nmotor(1, -30); motor(2, -60); delay(1500);\nBK(30); delay(1000); AO();" },
+            'lv16': { name: "ด่าน 16: Multi-Drop", hint: "แวะ 3 จุด: คีบ -> วาง -> คีบ", code: "servo(1, 90); FD(30); delay(500); AO(); servo(1, 20); delay(500);\nFD(50); delay(2000); AO(); servo(1, 90); delay(500); BK(20); delay(500);\nSR(50); delay(800); FD(50); delay(2000); AO();\nSL(50); delay(800); FD(40); delay(1500); AO();" },
+            'lv17': { name: "ด่าน 17: Perimeter", hint: "เดินเลาะขอบสนามด้านนอกสุดให้ครบรอบ", code: "FD(80); delay(4000); SL(50); delay(900);\nFD(80); delay(3000); SL(50); delay(900);\nFD(80); delay(4000); SL(50); delay(900);\nFD(80); delay(3000); AO();" },
+            'lv18': { name: "ด่าน 18: Staircase", hint: "เดินแบบขั้นบันได: ขวา-ซ้าย-ขวา-ซ้าย", code: "FD(40); delay(1000); SR(50); delay(800);\nFD(40); delay(1000); SL(50); delay(800);\nFD(40); delay(1000); SR(50); delay(800);\nFD(40); delay(1000); SL(50); delay(800); AO();" },
+            'lv19': { name: "ด่าน 19: 360 Spin", hint: "หมุนตัวอยู่กับที่ (ล้อซ้ายเดินหน้า ล้อขวาถอยหลัง)", code: "FD(50); delay(2000);\nmotor(1, 60); motor(2, -60); delay(2500);\nFD(50); delay(2000); AO();" },
+            'lv20': { name: "ด่าน 20: FINAL", hint: "บททดสอบสุดท้าย รวมทุกสกิลเข้าด้วยกัน!", code: "FD(60); delay(2000); SL(50); delay(800);\nFD(40); delay(1500); motor(1, -40); motor(2, -20); delay(1500);\nBK(30); delay(1000); FD(100); delay(1500); AO();" }
         };
 
-        // --- Init & Events ---
-        function resizeCanvas() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; draw(); }
-        window.addEventListener('resize', resizeCanvas);
+        // --- 2. Code Autocomplete System ---
+        const keywords = [
+            { text: 'FD(50);', desc: 'เดินหน้า' }, { text: 'BK(50);', desc: 'ถอยหลัง' },
+            { text: 'SL(50);', desc: 'หมุนซ้าย' }, { text: 'SR(50);', desc: 'หมุนขวา' },
+            { text: 'AO();', desc: 'หยุดมอเตอร์' }, { text: 'delay(1000);', desc: 'หน่วงเวลา (ms)' },
+            { text: 'servo(1, 90);', desc: 'เซอร์โว (ช่อง, องศา)' }, { text: 'oled.text(0,0,"");', desc: 'จอภาพ' }
+        ];
+        const editorArea = document.getElementById('codeEditor');
+        const suggestionBox = document.getElementById('suggestionBox');
         
-        function resetCamera() { 
-            camera.x = WORLD_W / 2; camera.y = WORLD_H / 2; 
-            const scaleX = canvas.width / (WORLD_W + 100); const scaleY = canvas.height / (WORLD_H + 100); 
-            camera.scale = Math.min(scaleX, scaleY, 0.5); 
-            draw(); 
+        editorArea.addEventListener('input', () => {
+            const text = editorArea.value;
+            const cursor = editorArea.selectionStart;
+            let start = cursor - 1;
+            while(start >= 0 && /[a-zA-Z0-9_]/.test(text[start])) start--;
+            start++;
+            const word = text.substring(start, cursor).toLowerCase();
+            
+            if(word.length < 1) { suggestionBox.style.display = 'none'; return; }
+            const matches = keywords.filter(k => k.text.toLowerCase().startsWith(word));
+            
+            if(matches.length > 0) {
+                suggestionBox.innerHTML = matches.map(m => 
+                    `<div class="suggestion-item" onclick="insertSuggestion('${m.text}', ${start}, ${cursor})">
+                        <span class="font-bold text-blue-400">${m.text}</span><span class="text-gray-500">${m.desc}</span>
+                    </div>`
+                ).join('');
+                // Simple positioning logic
+                const rect = editorArea.getBoundingClientRect();
+                suggestionBox.style.top = (rect.top + 60) + 'px'; // Approx
+                suggestionBox.style.left = (rect.left + 60) + 'px';
+                suggestionBox.style.display = 'block';
+            } else { suggestionBox.style.display = 'none'; }
+        });
+
+        function insertSuggestion(text, start, end) {
+            const val = editorArea.value;
+            editorArea.value = val.substring(0, start) + text + val.substring(end);
+            suggestionBox.style.display = 'none'; editorArea.focus();
         }
+        function insertCode(code) {
+            const start = editorArea.selectionStart;
+            editorArea.value = editorArea.value.substring(0, start) + code + editorArea.value.substring(editorArea.selectionEnd);
+            editorArea.focus();
+        }
+
+        // --- 3. Core Simulator Logic ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const oled = document.getElementById('oledScreen');
+        let isRunning=false, animationFrame, commandQueue=[], currentCmdIndex=0, cmdStartTime=0;
+        
+        // Robot & Map
+        const WORLD_W = 2400, WORLD_H = 1800;
+        let camera = { x: WORLD_W/2, y: WORLD_H/2, scale: 0.5 };
+        let robot = { x: 0, y: 0, angle: 0, speedL: 0, speedR: 0, servoAngle: 90, holdingObject: null };
+        let currentLevel = 'lv1';
+        let cans=[], targetZones=[], checkpoints=[], currentCheckpointIndex=0;
+
+        // Init
+        window.addEventListener('resize', resizeCanvas);
+        function resizeCanvas() { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; draw(); }
+        
+        // Touch & Mouse Handling
+        let isDragging=false, lastMouse={x:0, y:0};
+        
+        function handleStart(x, y) { isDragging=true; lastMouse={x, y}; }
+        function handleMove(x, y) {
+            if(isDragging) {
+                camera.x -= (x - lastMouse.x)/camera.scale;
+                camera.y -= (y - lastMouse.y)/camera.scale;
+                lastMouse = {x, y};
+                draw();
+            }
+        }
+        function handleEnd() { isDragging=false; }
+
+        canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
+        window.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
+        
+        // Touch events for mobile/tablet
+        canvas.addEventListener('touchstart', e => {
+            if(e.touches.length === 1) {
+                handleStart(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }
+        }, {passive: false});
+        canvas.addEventListener('touchmove', e => {
+            if(e.touches.length === 1) {
+                handleMove(e.touches[0].clientX, e.touches[0].clientY);
+                e.preventDefault();
+            }
+        }, {passive: false});
+        canvas.addEventListener('touchend', handleEnd);
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const z = e.deltaY > 0 ? 0.9 : 1.1;
+            camera.scale *= z; draw();
+        }, {passive:false});
+
+        function resetCamera() { camera.scale = 0.5; camera.x = WORLD_W/2; camera.y = WORLD_H/2; draw(); }
         function zoomIn() { camera.scale *= 1.2; draw(); }
         function zoomOut() { camera.scale /= 1.2; draw(); }
-        
-        // Mouse Controls
-        canvas.addEventListener('mousedown', e => { isDragging = true; lastMouse = { x: e.clientX, y: e.clientY }; });
-        window.addEventListener('mouseup', () => isDragging = false);
-        canvas.addEventListener('mousemove', e => {
-            if (isDragging) {
-                const dx = e.clientX - lastMouse.x; const dy = e.clientY - lastMouse.y;
-                camera.x -= dx / camera.scale; camera.y -= dy / camera.scale;
-                lastMouse = { x: e.clientX, y: e.clientY }; draw();
-            }
-        });
-        canvas.addEventListener('wheel', e => { e.preventDefault(); const newScale = camera.scale * (1 - Math.sign(e.deltaY) * 0.1); if (newScale > 0.1 && newScale < 5.0) { camera.scale = newScale; draw(); } }, { passive: false });
 
-        // Logic
-        function resetScenario() {
-            robot.speedL = 0; robot.speedR = 0; robot.servoAngle = 90; robot.holdingObject = null;
-            let startX = WORLD_W * 0.5, startY = WORLD_H * 0.95, startAngle = -Math.PI / 2;
-            cans = []; targetZones = []; checkpoints = []; currentCheckpointIndex = 0;
+        // --- 4. Mission Logic & Level Loading ---
+        function loadLevel(lv) {
+            currentLevel = lv;
+            resetSimulationLogic(); // Stop engine
             
-            // Map Setup
-            const w = WORLD_W, h = WORLD_H;
-            const locEng = { x: w*0.15, y: h*0.2, w: w*0.2, h: h*0.2 };
-            const locSci = { x: w*0.48, y: h*0.15, w: w*0.2, h: h*0.2 };
-            const locMed = { x: w*0.45, y: h*0.75, w: w*0.2, h: h*0.15 };
-            const locAgri = { x: w*0.82, y: h*0.2, w: w*0.2, h: h*0.2 };
-            const locParking = { x: w*0.85, y: h*0.85, w: 200, h: 250 };
-
-            switch(currentLevel) {
-                case 'lv1': targetZones.push({ ...locEng, type: 'stop', active: true }); break;
-                case 'lv2': targetZones.push({ ...locSci, type: 'stop', active: true }); break;
-                case 'lv3': targetZones.push({ ...locMed, type: 'stop', active: true }); break;
-                case 'lv4': targetZones.push({ ...locAgri, type: 'stop', active: true }); break;
-                case 'lv5': cans.push({id:1, x:startX, y:startY-150, color:'orange', radius:15, grabbed:false}); targetZones.push({...locEng, type:'drop', active:true}); break;
-                case 'lv6': startX=locSci.x; startY=locSci.y+150; startAngle=-Math.PI/2; cans.push({id:1, x:locSci.x, y:locSci.y, color:'#3b82f6', radius:15, grabbed:false}); targetZones.push({...locMed, type:'drop', active:true}); break;
-                case 'lv7': checkpoints=[{x:w*0.2, y:h*0.45, r:100}, {x:w*0.5, y:h*0.1, r:100}, {x:w*0.8, y:h*0.45, r:100}, {x:w*0.5, y:h*0.9, r:100}]; break;
-                case 'lv8': startX=locSci.x; startY=locSci.y+100; targetZones.push({...locAgri, type:'stop', active:true}); break;
-                case 'lv9': startX=locAgri.x; startY=locAgri.y+200; startAngle=Math.PI/2; targetZones.push({...locParking, type:'stop', active:true}); break;
-                case 'lv10': cans.push({id:1, x:locEng.x+locEng.w/2, y:locEng.y+locEng.h+50, color:'red', radius:15, grabbed:false}); cans.push({id:2, x:locAgri.x+locAgri.w/2, y:locAgri.y+locAgri.h+50, color:'green', radius:15, grabbed:false}); targetZones.push({...locParking, type:'stop', active:true}); break;
-                case 'lv11': startX=w*0.25; startY=h*0.9; checkpoints=[{x:w*0.25,y:h*0.75,r:60},{x:w*0.35,y:h*0.6,r:60},{x:w*0.25,y:h*0.45,r:60},{x:w*0.35,y:h*0.3,r:60},{x:w*0.25,y:h*0.15,r:80}]; break;
-                case 'lv12': startX=w*0.75; startY=h*0.8; targetZones.push({x:w*0.75, y:h*0.85, w:100, h:100, type:'stop', active:true}); break;
-                case 'lv13': startX=w*0.5; startY=h*0.5; checkpoints=[{x:w*0.4,y:h*0.4,r:80},{x:w*0.6,y:h*0.4,r:80},{x:w*0.5,y:h*0.5,r:60}]; break;
-                case 'lv14': startX=w*0.5; startY=h*0.5; targetZones.push({x:w*0.5, y:h*0.2, w:100, h:100, type:'stop', active:true}); break;
-                case 'lv15': startX=w*0.25; startY=h*0.2; startAngle=Math.PI/2; targetZones=[{x:w*0.25, y:h*0.8, w:100, h:100, type:'stop', active:true}]; break;
-                case 'lv16': cans.push({id:1,x:startX,y:startY-100,color:'red',radius:15}); cans.push({id:2,x:locSci.x,y:locSci.y+100,color:'blue',radius:15}); cans.push({id:3,x:locAgri.x,y:locAgri.y+100,color:'green',radius:15}); targetZones.push({...locMed, type:'drop', active:true}); break;
-                case 'lv17': startX=w*0.1; startY=h*0.9; checkpoints=[{x:w*0.1,y:h*0.1,r:100},{x:w*0.9,y:h*0.1,r:100},{x:w*0.9,y:h*0.9,r:100},{x:w*0.1,y:h*0.9,r:100}]; break;
-                case 'lv18': startX=w*0.1; startY=h*0.9; checkpoints=[{x:w*0.2,y:h*0.8,r:60},{x:w*0.3,y:h*0.7,r:60},{x:w*0.4,y:h*0.6,r:60},{x:w*0.5,y:h*0.5,r:60}]; break;
-                case 'lv19': targetZones.push({x:startX, y:startY-200, w:100, h:100, type:'stop', active:true}); break;
-                case 'lv20': startX=w*0.5; startY=h*0.9; cans.push({id:1,x:w*0.2,y:h*0.5,color:'red',radius:15}); cans.push({id:2,x:w*0.8,y:h*0.5,color:'blue',radius:15}); targetZones.push({x:w*0.5, y:h*0.1, w:200, h:200, type:'stop', active:true}); break;
-            }
-
-            robot.x = startX; robot.y = startY; robot.angle = startAngle;
-            oled.innerText = "Ready...";
-            updateDashboard(); resetCamera(); draw();
-        }
-
-        // --- Draw ---
-        function draw() {
-            ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height);
-            const cx = canvas.width/2, cy = canvas.height/2;
-            ctx.translate(cx, cy); ctx.scale(camera.scale, camera.scale); ctx.translate(-camera.x, -camera.y);
-
-            drawUbonMap();
+            // Default Start
+            let startX = WORLD_W/2, startY = WORLD_H*0.95, startAngle = -Math.PI/2;
+            cans=[]; targetZones=[]; checkpoints=[]; currentCheckpointIndex=0;
             
-            checkpoints.forEach((cp, idx) => {
-                ctx.beginPath(); ctx.arc(cp.x, cp.y, cp.r, 0, Math.PI*2);
-                ctx.fillStyle = idx===currentCheckpointIndex ? 'rgba(239,68,68,0.4)' : 'rgba(209,213,219,0.3)';
-                ctx.fill(); ctx.strokeStyle = idx===currentCheckpointIndex ? '#ef4444' : '#9ca3af'; ctx.stroke();
-                ctx.fillStyle = '#000'; ctx.font='bold 30px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(idx+1, cp.x, cp.y);
-            });
-
-            targetZones.forEach(z => {
-                if(!z.active) return;
-                const pulse = Math.sin(Date.now()/200)*0.2 + 0.4;
-                ctx.fillStyle = z.type==='drop' ? `rgba(16,185,129,${pulse})` : `rgba(239,68,68,${pulse})`;
-                ctx.fillRect(z.x-z.w/2, z.y-z.h/2, z.w, z.h);
-                ctx.fillStyle='#000'; ctx.font="bold 30px Prompt"; ctx.textAlign="center"; ctx.fillText(z.type==='drop'?"จุดวาง":"เป้าหมาย", z.x, z.y);
-            });
-
-            cans.forEach(c => { if(!c.grabbed) drawCan(c.x, c.y, c.color, c.radius); });
-            drawRobot();
-        }
-
-        function drawUbonMap() {
+            // Map Coordinates
             const w=WORLD_W, h=WORLD_H;
-            ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,w,h); ctx.strokeStyle='#94a3b8'; ctx.lineWidth=10; ctx.strokeRect(0,0,w,h);
-            ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=80; ctx.strokeStyle='#334155';
-            ctx.beginPath();
-            ctx.moveTo(w*0.25, h*0.2); ctx.lineTo(w*0.25, h*0.8); ctx.lineTo(w*0.75, h*0.8); ctx.lineTo(w*0.75, h*0.2); ctx.lineTo(w*0.25, h*0.2);
-            ctx.moveTo(w*0.25, h*0.5); ctx.lineTo(w*0.75, h*0.5); ctx.moveTo(w*0.5, h*0.2); ctx.lineTo(w*0.5, h*0.5); ctx.moveTo(w*0.5, h*0.8); ctx.lineTo(w*0.5, h*0.95);
-            ctx.stroke();
-            ctx.lineWidth=4; ctx.strokeStyle='#ffffff'; ctx.setLineDash([20,30]); ctx.stroke(); ctx.setLineDash([]);
+            const loc = { eng:{x:w*0.15,y:h*0.2}, sci:{x:w*0.48,y:h*0.15}, med:{x:w*0.45,y:h*0.75}, agri:{x:w*0.82,y:h*0.2}, park:{x:w*0.85,y:h*0.85} };
+
+            // Level Config (Same logic)
+            if(lv === 'lv1') targetZones.push({x:loc.eng.x, y:loc.eng.y, w:400, h:300, type:'stop', active:true});
+            else if(lv === 'lv2') targetZones.push({x:loc.sci.x, y:loc.sci.y, w:400, h:300, type:'stop', active:true});
+            else if(lv === 'lv3') targetZones.push({x:loc.med.x, y:loc.med.y, w:400, h:300, type:'stop', active:true});
+            else if(lv === 'lv4') targetZones.push({x:loc.agri.x, y:loc.agri.y, w:400, h:300, type:'stop', active:true});
+            else if(lv === 'lv5') { cans.push({id:1, x:startX, y:startY-200, color:'orange', radius:20}); targetZones.push({x:loc.eng.x, y:loc.eng.y, w:400, h:300, type:'drop', active:true}); }
+            else if(lv === 'lv6') { startX=loc.sci.x; startY=loc.sci.y+200; cans.push({id:1, x:loc.sci.x, y:loc.sci.y, color:'blue', radius:20}); targetZones.push({x:loc.med.x, y:loc.med.y, w:400, h:300, type:'drop', active:true}); }
+            else if(lv === 'lv7') { checkpoints=[{x:w*0.2,y:h*0.45,r:150}, {x:w*0.5,y:h*0.1,r:150}, {x:w*0.8,y:h*0.45,r:150}, {x:w*0.5,y:h*0.9,r:150}]; }
+            else if(lv === 'lv8') { startX=loc.sci.x; startY=loc.sci.y+100; targetZones.push({x:loc.agri.x, y:loc.agri.y, w:400, h:300, type:'stop', active:true}); }
+            else if(lv === 'lv9') { startX=loc.agri.x; startY=loc.agri.y+300; startAngle=Math.PI/2; targetZones.push({x:loc.park.x, y:loc.park.y, w:300, h:400, type:'stop', active:true}); }
+            else if(lv === 'lv10') { cans.push({id:1,x:loc.eng.x,y:loc.eng.y+200,color:'red',radius:20}); cans.push({id:2,x:loc.agri.x,y:loc.agri.y+200,color:'green',radius:20}); targetZones.push({x:loc.park.x, y:loc.park.y, w:300, h:400, type:'stop', active:true}); }
+            else if(lv === 'lv11') checkpoints=[{x:w*0.25,y:h*0.75,r:80},{x:w*0.35,y:h*0.6,r:80},{x:w*0.25,y:h*0.45,r:80},{x:w*0.35,y:h*0.3,r:80}];
+            else if(lv === 'lv12') { startX=w*0.75; startY=h*0.8; targetZones.push({x:w*0.75, y:h*0.85, w:150, h:150, type:'stop', active:true}); }
+            else if(lv === 'lv16') { cans.push({id:1,x:startX,y:startY-150,color:'red',radius:20}); cans.push({id:2,x:loc.sci.x,y:loc.sci.y+150,color:'blue',radius:20}); targetZones.push({x:loc.med.x, y:loc.med.y, w:400, h:300, type:'drop', active:true}); }
             
-            drawBuilding(w*0.1, h*0.1, w*0.2, h*0.3, '#fca5a5', 'วิศวกรรมศาสตร์');
-            drawBuilding(w*0.4, h*0.05, w*0.2, h*0.25, '#fde047', 'วิทยาศาสตร์');
-            drawBuilding(w*0.7, h*0.1, w*0.2, h*0.3, '#86efac', 'เกษตรศาสตร์');
-            drawBuilding(w*0.35, h*0.6, w*0.3, h*0.15, '#93c5fd', 'แพทยศาสตร์');
+            // Set Robot
+            robot.x = startX; robot.y = startY; robot.angle = startAngle;
             
-            ctx.fillStyle='rgba(59,130,246,0.3)'; ctx.fillRect(w*0.45, h*0.9, w*0.1, h*0.1);
-            ctx.fillStyle='#1e3a8a'; ctx.font="bold 32px Prompt"; ctx.textAlign="center"; ctx.fillText("START", w*0.5, h*0.95);
+            // Set Editor Default
+            const template = `#include <POP32.h>\n\nvoid setup() {\n  oled.text(0, 0, "Mission: ${lv}");\n}\n\nvoid loop() {\n  // เขียนโค้ดของคุณที่นี่\n  \n}`;
+            editorArea.value = template;
+            
+            document.getElementById('missionText').innerText = levelData[lv]?.name || "Custom Mission";
+            document.getElementById('missionBox').classList.remove('hidden');
+            document.getElementById('successOverlay').classList.add('hidden');
+            document.getElementById('successOverlay').classList.remove('flex');
+            
+            draw();
         }
 
-        function drawBuilding(x,y,w,h,c,l) { ctx.fillStyle=c; ctx.fillRect(x,y,w,h); ctx.strokeStyle='rgba(0,0,0,0.1)'; ctx.lineWidth=2; ctx.strokeRect(x,y,w,h); ctx.fillStyle='#374151'; ctx.font='bold 24px Prompt'; ctx.fillText(l, x+w/2, y+h/2); }
-        function drawCan(x,y,c,r) { ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(x-r/3, y-r/3, r/4, 0, Math.PI*2); ctx.fill(); }
-        
-        function drawRobot() {
-            ctx.save(); ctx.translate(robot.x, robot.y); ctx.rotate(robot.angle);
-            const va = (robot.servoAngle/90)*(Math.PI/4);
-            ctx.strokeStyle='#4b5563'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(15,-10); ctx.lineTo(15+20*Math.cos(va), -10-20*Math.sin(va)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(15,10); ctx.lineTo(15+20*Math.cos(va), 10+20*Math.sin(va)); ctx.stroke();
-            if(robot.holdingObject) drawCan(25, 0, robot.holdingObject.color, robot.holdingObject.radius);
-            ctx.fillStyle=ROBOT_COLOR; ctx.beginPath(); ctx.roundRect(-20,-20,40,40,8); ctx.fill();
-            ctx.fillStyle='#111827'; ctx.fillRect(-10,-25,20,5); ctx.fillRect(-10,20,20,5);
-            ctx.fillStyle='#FCD34D'; ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(-5,-6); ctx.lineTo(-5,6); ctx.fill();
-            ctx.restore();
-        }
+        document.getElementById('missionSelect').addEventListener('change', (e) => loadLevel(e.target.value));
 
-        // --- Physics & Run ---
-        function updatePhysics(dt) {
-            const sm = 3.5;
-            let v = (robot.speedL+robot.speedR)*sm/2;
-            let rot = (robot.speedR-robot.speedL)/40*0.8;
-            robot.x += Math.cos(robot.angle)*v*dt; robot.y += Math.sin(robot.angle)*v*dt; robot.angle += rot*dt;
-            if(robot.x<0) robot.x=0; if(robot.x>WORLD_W) robot.x=WORLD_W; if(robot.y<0) robot.y=0; if(robot.y>WORLD_H) robot.y=WORLD_H;
-            checkMission();
-        }
-
-        function attemptGrab() {
-            const reach=50, gx=robot.x+Math.cos(robot.angle)*30, gy=robot.y+Math.sin(robot.angle)*30;
-            let grabbed=null; cans.forEach(c=>{ if(!c.grabbed && Math.hypot(c.x-gx, c.y-gy)<reach) grabbed=c; });
-            if(grabbed) { grabbed.grabbed=true; robot.holdingObject=grabbed; playTone(1000,100); }
-        }
-        function attemptDrop() { if(robot.holdingObject) { robot.holdingObject.grabbed=false; robot.holdingObject.x=robot.x+Math.cos(robot.angle)*40; robot.holdingObject.y=robot.y+Math.sin(robot.angle)*40; robot.holdingObject=null; } }
-        
-        function checkMission() {
-            if(!isRunning) return;
-            if(checkpoints.length>0) {
-                if(currentCheckpointIndex<checkpoints.length) {
-                    let cp=checkpoints[currentCheckpointIndex];
-                    if(Math.hypot(robot.x-cp.x, robot.y-cp.y) < cp.r) { currentCheckpointIndex++; playTone(600,100); if(currentCheckpointIndex>=checkpoints.length) showSuccess(); }
-                } return;
-            }
-            targetZones.forEach(z => {
-                if(!z.active) return;
-                let inZone = (robot.x > z.x-z.w/2 && robot.x < z.x+z.w/2 && robot.y > z.y-z.h/2 && robot.y < z.y+z.h/2);
-                if(inZone) {
-                    if(z.type==='stop' && Math.abs(robot.speedL)<5 && Math.abs(robot.speedR)<5) showSuccess();
-                    else if(z.type==='drop') { let itemIn=false; cans.forEach(c=>{ if(!c.grabbed && c.x>z.x-z.w/2 && c.x<z.x+z.w/2 && c.y>z.y-z.h/2 && c.y<z.y+z.h/2) itemIn=true; }); if(itemIn) showSuccess(); }
-                }
-            });
-        }
-
-        function showSuccess() { isRunning=false; document.getElementById('successOverlay').classList.remove('hidden'); document.getElementById('successOverlay').classList.add('flex'); playTone(800,100); setTimeout(()=>playTone(1200,300),150); }
-        function closeSuccess() { document.getElementById('successOverlay').classList.add('hidden'); document.getElementById('successOverlay').classList.remove('flex'); }
-        function nextLevel() { closeSuccess(); let s=document.getElementById('missionSelect'); if(s.selectedIndex<s.options.length-1) { s.selectedIndex++; s.dispatchEvent(new Event('change')); } }
-
+        // --- 5. Simulation Engine ---
         function parseCode(src) {
-            const lines=src.split('\n'), cmds=[];
-            lines.forEach((l,i) => {
-                l=l.split('//')[0].trim(); if(!l || l.startsWith('#') || l.startsWith('void') || l==='{' || l==='}') return;
-                let m=l.match(/([a-zA-Z0-9_.]+)\((.*)\);?/);
-                if(m) {
-                    let c=m[1].toLowerCase(), args=[];
-                    if(m[2].includes('"')) { let sm=m[2].match(/"([^"]+)"/); if(sm) args.push(sm[1]); let nm=m[2].split(',')[0].trim(); if(!isNaN(nm)) args.unshift(parseInt(nm)); }
-                    else args=m[2].split(',').map(s=>parseFloat(s.trim()));
+            const lines = src.split('\n');
+            const cmds = [];
+            lines.forEach((l, i) => {
+                l = l.split('//')[0].trim();
+                if (!l || l.startsWith('#') || l.startsWith('void') || l === '{' || l === '}') return;
+                
+                let match = l.match(/([a-zA-Z0-9_.]+)\((.*)\);?/);
+                if (match) {
+                    let c = match[1].toLowerCase();
+                    let args = [];
+                    if(match[2].includes('"')) {
+                        let str = match[2].match(/"([^"]+)"/);
+                        if(str) args.push(str[1]);
+                        let num = match[2].split(',')[0].trim();
+                        if(!isNaN(num)) args.unshift(parseInt(num));
+                    } else {
+                        args = match[2].split(',').map(s => parseFloat(s.trim()));
+                    }
                     if(c==='delay') c='sleep';
                     cmds.push({type:c, args:args, line:i+1});
                 }
             });
-            cmds.push({type:'ao', args:[]}); return cmds;
+            cmds.push({type:'ao', args:[]});
+            return cmds;
         }
 
         function runSimulation() {
             if(isRunning) return;
-            commandQueue = parseCode(editor.value);
-            if(commandQueue.length===0) { alert("กรุณาเขียนโค้ด"); return; }
-            isRunning=true; currentCommandIndex=0; commandStartTime=0; lastTimestamp=performance.now();
-            runBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Running...'; runBtn.classList.add('bg-orange-500'); statusIndicator.innerHTML='<span class="text-green-500">Running</span>';
+            commandQueue = parseCode(editorArea.value);
+            if(commandQueue.length === 0) { alert("กรุณาเขียนโค้ดก่อนรัน"); return; }
+            
+            isRunning = true;
+            currentCmdIndex = 0;
+            cmdStartTime = 0;
+            lastTimestamp = performance.now();
+            
+            document.getElementById('runBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span class="hidden sm:inline">Running...</span>';
+            document.getElementById('statusIndicator').innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500"></span> RUN';
+            
             requestAnimationFrame(gameLoop);
         }
 
-        function resetSimulation() { isRunning=false; cancelAnimationFrame(animationFrame); resetScenario(); runBtn.innerHTML='<i class="fas fa-play"></i> Upload & Run'; runBtn.classList.remove('bg-orange-500'); statusIndicator.innerHTML='<span class="text-yellow-500">Ready</span>'; }
+        function resetSimulationLogic() {
+            isRunning = false;
+            cancelAnimationFrame(animationFrame);
+            robot.speedL = 0; robot.speedR = 0;
+            updateDashboard();
+            document.getElementById('runBtn').innerHTML = '<i class="fas fa-play"></i> <span id="runBtnText">Upload & Run</span>';
+            document.getElementById('statusIndicator').innerHTML = '<span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> READY';
+        }
+        
+        function resetSimulation() {
+            resetSimulationLogic();
+            loadLevel(currentLevel); // Reload positions
+        }
 
         function gameLoop(ts) {
             if(!isRunning) return;
-            const dt=(ts-lastTimestamp)/1000; lastTimestamp=ts;
-            if(currentCommandIndex<commandQueue.length) {
-                const cmd=commandQueue[currentCommandIndex];
-                if(commandStartTime===0) { commandStartTime=ts; executeCommand(cmd); }
-                if(cmd.type==='sleep') { if(ts-commandStartTime >= cmd.args[0]) { currentCommandIndex++; commandStartTime=0; } }
-                else { currentCommandIndex++; commandStartTime=0; }
+            const dt = (ts - lastTimestamp) / 1000;
+            lastTimestamp = ts;
+
+            if(currentCmdIndex < commandQueue.length) {
+                const cmd = commandQueue[currentCmdIndex];
+                if(cmdStartTime === 0) { cmdStartTime = ts; executeCommand(cmd); }
+                
+                if(cmd.type === 'sleep') {
+                    if(ts - cmdStartTime >= cmd.args[0]) { currentCmdIndex++; cmdStartTime = 0; }
+                } else {
+                    currentCmdIndex++; cmdStartTime = 0;
+                }
             } else {
-                isRunning=false; robot.speedL=0; robot.speedR=0; updateDashboard();
-                runBtn.innerHTML='<i class="fas fa-check"></i> Done'; setTimeout(()=>resetSimulation(),1500);
+                isRunning = false;
+                robot.speedL = 0; robot.speedR = 0; updateDashboard();
+                document.getElementById('runBtn').innerHTML = '<i class="fas fa-check"></i> Done';
+                setTimeout(() => document.getElementById('runBtn').innerHTML = '<i class="fas fa-play"></i> <span id="runBtnText">Upload & Run</span>', 1500);
             }
-            updatePhysics(dt); draw();
-            if(isRunning) animationFrame=requestAnimationFrame(gameLoop);
+
+            updatePhysics(dt);
+            draw();
+            if(isRunning) animationFrame = requestAnimationFrame(gameLoop);
         }
 
         function executeCommand(cmd) {
             switch(cmd.type) {
-                case 'fd': robot.speedL=cmd.args[0]; robot.speedR=cmd.args[0]; break;
-                case 'bk': robot.speedL=-cmd.args[0]; robot.speedR=-cmd.args[0]; break;
-                case 'sl': robot.speedL=-cmd.args[0]; robot.speedR=cmd.args[0]; break;
-                case 'sr': robot.speedL=cmd.args[0]; robot.speedR=-cmd.args[0]; break;
-                case 'ao': robot.speedL=0; robot.speedR=0; break;
-                case 'motor': if(cmd.args[0]===1) robot.speedL=cmd.args[1]; if(cmd.args[0]===2) robot.speedR=cmd.args[1]; break;
-                case 'servo': setGripper(cmd.args[1]!==undefined?cmd.args[1]:cmd.args[0]); break;
-                case 'oled.text': if(cmd.args[0]===0) oled.innerText=cmd.args[2]; else oled.innerText+="\n"+cmd.args[2]; break;
+                case 'fd': robot.speedL = cmd.args[0]; robot.speedR = cmd.args[0]; break;
+                case 'bk': robot.speedL = -cmd.args[0]; robot.speedR = -cmd.args[0]; break;
+                case 'sl': robot.speedL = -cmd.args[0]; robot.speedR = cmd.args[0]; break;
+                case 'sr': robot.speedL = cmd.args[0]; robot.speedR = -cmd.args[0]; break;
+                case 'ao': robot.speedL = 0; robot.speedR = 0; break;
+                case 'servo': robot.servoAngle = cmd.args[1] !== undefined ? cmd.args[1] : cmd.args[0]; checkGrab(); break;
+                case 'oled.text': if(cmd.args[0]===0) oled.innerText = cmd.args[2]; else oled.innerText += "\n" + cmd.args[2]; break;
             }
             updateDashboard();
         }
 
-        function updateDashboard() { motorLDisp.innerText=Math.round(robot.speedL); motorRDisp.innerText=Math.round(robot.speedR); servoDisp.innerText=robot.servoAngle+"°"; }
-        function playTone(f,d) { const ac=new(window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(); const g=ac.createGain(); o.type='square'; o.frequency.value=f; g.gain.value=0.05; o.connect(g); g.connect(ac.destination); o.start(); setTimeout(()=>o.stop(),d); }
+        function updatePhysics(dt) {
+            const spd = 3.5;
+            let v = (robot.speedL + robot.speedR) * spd / 2;
+            let rot = (robot.speedR - robot.speedL) / 40 * 0.8;
+            robot.x += Math.cos(robot.angle)*v*dt;
+            robot.y += Math.sin(robot.angle)*v*dt;
+            robot.angle += rot*dt;
+            
+            // Hold Object
+            if(robot.holdingObject) {
+                robot.holdingObject.x = robot.x + Math.cos(robot.angle)*40;
+                robot.holdingObject.y = robot.y + Math.sin(robot.angle)*40;
+            }
+            
+            checkGoals();
+        }
 
-        const mSel=document.getElementById('missionSelect'), mBox=document.getElementById('missionBox'), mTxt=document.getElementById('missionText');
-        mSel.addEventListener('change', e=>{ currentLevel=e.target.value; setMissionUI(currentLevel); resetSimulation(); });
+        function checkGrab() {
+            if(robot.servoAngle <= 45 && !robot.holdingObject) {
+                const reach = 60;
+                const gx = robot.x + Math.cos(robot.angle)*40;
+                const gy = robot.y + Math.sin(robot.angle)*40;
+                let found = cans.find(c => !c.grabbed && Math.hypot(c.x-gx, c.y-gy) < reach);
+                if(found) { found.grabbed = true; robot.holdingObject = found; playTone(1000, 100); }
+            } else if(robot.servoAngle >= 80 && robot.holdingObject) {
+                robot.holdingObject.grabbed = false;
+                robot.holdingObject = null;
+            }
+        }
 
-        function openAI() { document.getElementById('aiModal').classList.remove('hidden'); document.getElementById('aiChatContent').innerHTML=`<p class="text-gray-700 bg-white p-3 rounded-lg shadow-sm border border-gray-200">สวัสดีครับ! ผมคือ AI ผู้ช่วยสำหรับด่าน <strong>${levelData[currentLevel]?.name || 'นี้'}</strong> มีอะไรให้ช่วยไหมครับ?</p>`; }
+        function checkGoals() {
+            // Checkpoints
+            if(checkpoints.length > 0) {
+                if(currentCheckpointIndex < checkpoints.length) {
+                    let cp = checkpoints[currentCheckpointIndex];
+                    if(Math.hypot(robot.x - cp.x, robot.y - cp.y) < cp.r) {
+                        currentCheckpointIndex++; playTone(600, 100);
+                        if(currentCheckpointIndex >= checkpoints.length) showSuccess();
+                    }
+                }
+                return;
+            }
+            // Zones
+            targetZones.forEach(z => {
+                if(!z.active) return;
+                let inZone = (robot.x > z.x - z.w/2 && robot.x < z.x + z.w/2 && robot.y > z.y - z.h/2 && robot.y < z.y + z.h/2);
+                if(inZone) {
+                    if(z.type === 'stop' && Math.abs(robot.speedL) < 5 && Math.abs(robot.speedR) < 5) showSuccess();
+                    else if(z.type === 'drop') {
+                        let itemIn = cans.some(c => !c.grabbed && c.x > z.x - z.w/2 && c.x < z.x + z.w/2 && c.y > z.y - z.h/2 && c.y < z.y + z.h/2);
+                        if(itemIn) showSuccess();
+                    }
+                }
+            });
+        }
+
+        function showSuccess() {
+            isRunning = false;
+            document.getElementById('successOverlay').classList.remove('hidden');
+            document.getElementById('successOverlay').classList.add('flex');
+            playTone(800, 100); setTimeout(() => playTone(1200, 400), 150);
+        }
+        function closeSuccess() { document.getElementById('successOverlay').classList.add('hidden'); document.getElementById('successOverlay').classList.remove('flex'); }
+        function nextLevel() {
+            let sel = document.getElementById('missionSelect');
+            if(sel.selectedIndex < sel.options.length - 1) {
+                sel.selectedIndex++; sel.dispatchEvent(new Event('change'));
+            }
+            closeSuccess();
+        }
+
+        function updateDashboard() {
+            document.getElementById('motorL').innerText = Math.round(robot.speedL);
+            document.getElementById('motorR').innerText = Math.round(robot.speedR);
+            document.getElementById('servoVal').innerText = robot.servoAngle + "°";
+        }
+        function playTone(f, d) {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                const ac = new AC();
+                const osc = ac.createOscillator();
+                const g = ac.createGain();
+                osc.type = 'square'; osc.frequency.value = f; g.gain.value = 0.05;
+                osc.connect(g); g.connect(ac.destination);
+                osc.start(); setTimeout(() => osc.stop(), d);
+            } catch(e) {}
+        }
+
+        function draw() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Camera
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.scale(camera.scale, camera.scale);
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw Map
+            const w=WORLD_W, h=WORLD_H;
+            ctx.fillStyle='#f9fafb'; ctx.fillRect(0,0,w,h);
+            ctx.strokeStyle='#9ca3af'; ctx.lineWidth=10; ctx.strokeRect(0,0,w,h);
+            
+            // Roads
+            ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth=100; ctx.strokeStyle='#374151';
+            ctx.beginPath();
+            ctx.moveTo(w*0.25, h*0.2); ctx.lineTo(w*0.25, h*0.8); ctx.lineTo(w*0.75, h*0.8); ctx.lineTo(w*0.75, h*0.2); ctx.lineTo(w*0.25, h*0.2);
+            ctx.moveTo(w*0.25, h*0.5); ctx.lineTo(w*0.75, h*0.5);
+            ctx.moveTo(w*0.5, h*0.2); ctx.lineTo(w*0.5, h*0.5);
+            ctx.moveTo(w*0.5, h*0.8); ctx.lineTo(w*0.5, h*0.95);
+            ctx.stroke();
+            
+            // Dashed Line
+            ctx.lineWidth=4; ctx.strokeStyle='#ffffff'; ctx.setLineDash([30, 40]); ctx.stroke(); ctx.setLineDash([]);
+
+            // Buildings
+            function drawB(x,y,w,h,c,t) {
+                ctx.fillStyle=c; ctx.fillRect(x,y,w,h);
+                ctx.strokeStyle='rgba(0,0,0,0.1)'; ctx.lineWidth=4; ctx.strokeRect(x,y,w,h);
+                ctx.fillStyle='#1f2937'; ctx.font='bold 36px Prompt'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(t, x+w/2, y+h/2);
+            }
+            drawB(w*0.1, h*0.1, w*0.2, h*0.3, '#fca5a5', 'วิศวกรรม');
+            drawB(w*0.4, h*0.05, w*0.2, h*0.25, '#fde047', 'วิทยาศาสตร์');
+            drawB(w*0.7, h*0.1, w*0.2, h*0.3, '#86efac', 'เกษตรศาสตร์');
+            drawB(w*0.35, h*0.6, w*0.3, h*0.15, '#93c5fd', 'แพทยศาสตร์');
+            
+            // Zones
+            targetZones.forEach(z => {
+                if(!z.active) return;
+                const p = Math.sin(Date.now()/200)*0.2 + 0.4;
+                ctx.fillStyle = z.type==='drop' ? `rgba(16,185,129,${p})` : `rgba(239,68,68,${p})`;
+                ctx.fillRect(z.x-z.w/2, z.y-z.h/2, z.w, z.h);
+                ctx.strokeStyle = z.type==='drop'?'#10b981':'#ef4444'; ctx.lineWidth=4; ctx.strokeRect(z.x-z.w/2, z.y-z.h/2, z.w, z.h);
+                ctx.fillStyle='#000'; ctx.font='bold 30px Prompt'; ctx.fillText(z.type==='drop'?'จุดวาง':'เป้าหมาย', z.x, z.y);
+            });
+
+            // Checkpoints
+            checkpoints.forEach((cp, i) => {
+                ctx.beginPath(); ctx.arc(cp.x, cp.y, cp.r, 0, Math.PI*2);
+                ctx.fillStyle = i===currentCheckpointIndex ? 'rgba(239,68,68,0.3)' : 'rgba(200,200,200,0.2)'; ctx.fill();
+                ctx.strokeStyle = i===currentCheckpointIndex ? 'red' : 'gray'; ctx.lineWidth=4; ctx.stroke();
+                ctx.fillStyle='black'; ctx.font='bold 40px Arial'; ctx.fillText(i+1, cp.x, cp.y);
+            });
+
+            // Cans
+            cans.forEach(c => {
+                if(!c.grabbed) {
+                    ctx.fillStyle=c.color; ctx.beginPath(); ctx.arc(c.x, c.y, c.radius, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=2; ctx.stroke();
+                }
+            });
+
+            // Robot
+            ctx.save(); ctx.translate(robot.x, robot.y); ctx.rotate(robot.angle);
+            // Gripper
+            const va = (robot.servoAngle/90)*(Math.PI/4);
+            ctx.strokeStyle='#4b5563'; ctx.lineWidth=8;
+            ctx.beginPath(); ctx.moveTo(20,-15); ctx.lineTo(20+30*Math.cos(va), -15-30*Math.sin(va)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(20,15); ctx.lineTo(20+30*Math.cos(va), 15+30*Math.sin(va)); ctx.stroke();
+            if(robot.holdingObject) {
+                ctx.fillStyle=robot.holdingObject.color; ctx.beginPath(); ctx.arc(35,0,robot.holdingObject.radius,0,Math.PI*2); ctx.fill();
+            }
+            // Body
+            ctx.fillStyle='#4f46e5'; ctx.beginPath(); ctx.roundRect(-25,-25,50,50,10); ctx.fill();
+            // Wheels
+            ctx.fillStyle='#1f2937'; ctx.fillRect(-15,-32,30,8); ctx.fillRect(-15,24,30,8);
+            // LED
+            ctx.fillStyle='#fbbf24'; ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(-5,-8); ctx.lineTo(-5,8); ctx.fill();
+            ctx.restore();
+        }
+
+        // --- 6. AI & Manual UI Logic ---
+        function openAI() {
+            document.getElementById('aiModal').classList.remove('hidden');
+            const chat = document.getElementById('aiChatContent');
+            chat.innerHTML = `
+                <div class="bg-indigo-900/50 text-indigo-100 p-3 rounded-lg border border-indigo-700/50 text-sm">
+                    <i class="fas fa-robot mr-2"></i> สวัสดีครับ! ผมคือ AI ผู้ช่วยสำหรับ <strong>${levelData[currentLevel]?.name}</strong> ให้ช่วยอะไรดีครับ?
+                </div>
+            `;
+        }
         function closeAI() { document.getElementById('aiModal').classList.add('hidden'); }
-        function addAiMessage(t,u) { const d=document.createElement('div'); d.className=u?"bg-indigo-100 text-indigo-900 p-3 rounded-lg self-end text-right":"bg-white text-gray-700 p-3 rounded-lg shadow-sm border border-gray-200"; d.innerHTML=t; document.getElementById('aiChatContent').appendChild(d); }
-        function aiGetHint() { addAiMessage("ขอคำใบ้หน่อย",true); setTimeout(()=>addAiMessage(`💡 <strong>คำใบ้:</strong> ${levelData[currentLevel]?.hint || 'ไม่มีคำใบ้สำหรับด่านนี้'}`),500); }
-        function aiCheckCode() { addAiMessage("ตรวจโค้ดให้หน่อย",true); let c=editor.value, a="โค้ดดูโอเคครับ ลองรันดูเลย!"; if(!c.includes("AO()")) a="⚠️ อย่าลืมสั่งหยุดมอเตอร์ (AO) ตอนจบนะ!"; else if(!c.includes("delay")) a="⚠️ อย่าลืมใส่ delay ให้หุ่นมีเวลาเดินนะ"; setTimeout(()=>addAiMessage(`🧐 ${a}`),600); }
-        function aiRevealSolution() { if(confirm("ยอมแพ้แล้วขอดูเฉลย?")) { addAiMessage("ขอดูเฉลย",true); setTimeout(()=>{ addAiMessage("🔓 โหลดเฉลยให้แล้วครับ"); editor.value=`#include <POP32.h>\n\nvoid setup() {\n  oled.text(0,0,"Solution");\n}\n\nvoid loop() {\n${levelData[currentLevel]?.code || ''}\n}`; closeAI(); },800); } }
+        function openManual() { document.getElementById('manualModal').classList.remove('hidden'); }
+        function closeManual() { document.getElementById('manualModal').classList.add('hidden'); }
 
-        function setMissionUI(l) { mBox.classList.remove('hidden'); mBox.classList.add('flex'); mTxt.innerText=levelData[l]?.name; editor.value=`#include <POP32.h>\n\nvoid setup() {\n  oled.text(0, 0, "Mission Start");\n}\n\nvoid loop() {\n  // เขียนโค้ดของคุณที่นี่\n  \n}`; }
+        function addAiMessage(msg, isUser) {
+            const chat = document.getElementById('aiChatContent');
+            const div = document.createElement('div');
+            div.className = isUser ? "ml-auto bg-blue-600 text-white p-2 rounded-lg text-sm max-w-[80%] rounded-tr-none" : "mr-auto bg-gray-700 text-gray-200 p-2 rounded-lg text-sm max-w-[80%] rounded-tl-none border border-gray-600";
+            div.innerHTML = msg;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function aiGetHint() {
+            addAiMessage("ขอคำใบ้หน่อยครับ", true);
+            setTimeout(() => {
+                const hint = levelData[currentLevel]?.hint || "ด่านนี้ไม่มีคำใบ้ ลองพยายามดูนะ!";
+                addAiMessage(`<i class="fas fa-lightbulb text-yellow-400"></i> ${hint}`, false);
+            }, 600);
+        }
+
+        function aiCheckCode() {
+            addAiMessage("ช่วยตรวจโค้ดให้หน่อย", true);
+            setTimeout(() => {
+                const code = document.getElementById('codeEditor').value;
+                let msg = "โค้ดดูเรียบร้อยดีครับ ลองกด Run เลย!";
+                if(!code.includes("AO()")) msg = "⚠️ ระวัง! ลืมใส่คำสั่ง <code>AO();</code> เพื่อหยุดหุ่นตอนจบหรือเปล่า?";
+                else if(!code.includes("delay")) msg = "⚠️ อย่าลืมใส่ <code>delay(ms);</code> ให้หุ่นมีเวลาเดินนะครับ";
+                else if(currentLevel === 'lv5' && !code.includes("servo")) msg = "⚠️ ด่านนี้ต้องคีบของ อย่าลืมใช้คำสั่ง <code>servo()</code> นะครับ";
+                addAiMessage(msg, false);
+            }, 800);
+        }
+
+        function aiRevealSolution() {
+            if(confirm("ต้องการดูเฉลยจริงๆ ใช่ไหม? (โค้ดปัจจุบันจะถูกทับ)")) {
+                addAiMessage("ขอดูเฉลยครับ", true);
+                setTimeout(() => {
+                    const sol = levelData[currentLevel]?.code;
+                    if(sol) {
+                        const fullCode = `#include <POP32.h>\n\nvoid setup() {\n  oled.text(0,0,"Solution Loaded");\n}\n\nvoid loop() {\n${sol}\n}`;
+                        document.getElementById('codeEditor').value = fullCode;
+                        addAiMessage("✅ ผมโหลดเฉลยลงในหน้าต่างเขียนโค้ดให้แล้วครับ ลองกด Run ดูการทำงานได้เลย", false);
+                        // Auto close after 2s
+                        setTimeout(closeAI, 2000);
+                    } else {
+                        addAiMessage("❌ ด่านนี้ยังไม่มีเฉลยครับ", false);
+                    }
+                }, 800);
+            }
+        }
 
         // Start
-        resizeCanvas(); setMissionUI('lv1');
+        loadLevel('lv1');
+        resizeCanvas();
     </script>
 </body>
 </html>
