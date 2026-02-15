@@ -407,7 +407,7 @@
         function zoomOut() { camera.scale /= 1.2; draw(); }
 
         // --- 4. Mission Logic & Level Loading ---
-        function loadLevel(lv) {
+        function loadLevel(lv, keepCode = false) {
             currentLevel = lv;
             resetSimulationLogic(); // Stop engine
             
@@ -437,9 +437,11 @@
             // Set Robot
             robot.x = startX; robot.y = startY; robot.angle = startAngle;
             
-            // Set Editor Default
-            const template = `#include <POP32.h>\n\nvoid setup() {\n  oled.text(0, 0, "Mission: ${lv}");\n}\n\nvoid loop() {\n  // เขียนโค้ดของคุณที่นี่\n  \n}`;
-            editorArea.value = template;
+            // Set Editor Default (Only if keepCode is false)
+            if (!keepCode) {
+                const template = `#include <POP32.h>\n\nvoid setup() {\n  oled.text(0, 0, "Mission: ${lv}");\n}\n\nvoid loop() {\n  // เขียนโค้ดของคุณที่นี่\n  \n}`;
+                editorArea.value = template;
+            }
             
             document.getElementById('missionText').innerText = levelData[lv]?.name || "Custom Mission";
             document.getElementById('missionBox').classList.remove('hidden');
@@ -506,7 +508,7 @@
         
         function resetSimulation() {
             resetSimulationLogic();
-            loadLevel(currentLevel); // Reload positions
+            loadLevel(currentLevel, true); // Reload positions, but keep code (true)
         }
 
         function gameLoop(ts) {
